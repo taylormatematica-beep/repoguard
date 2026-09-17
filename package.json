@@ -1,0 +1,9 @@
+{
+  "name": "repoguard",
+  "version": "1.0.0",
+  "description": "The Architecture Guardian for AI-assisted codebases.",
+  "main": "bin/repoguard.js",
+  "bin": { "repoguard": "./bin/repoguard.js" },
+  "author": "RepoGuard Team",
+  "license": "MIT"
+}
