@@ -1,9 +1,43 @@
 {
-  "name": "repoguard",
-  "version": "1.0.0",
-  "description": "The Architecture Guardian for AI-assisted codebases.",
+  "name": "repoguard-rules",
+  "version": "1.3.0",
+  "description": "The Architecture Guardian for AI-assisted codebases. Enforces clean layers, generates .cursorrules, CLAUDE.md & audits PRs in real-time.",
   "main": "bin/repoguard.js",
-  "bin": { "repoguard": "./bin/repoguard.js" },
-  "author": "RepoGuard Team",
-  "license": "MIT"
+  "bin": {
+    "repoguard-cli": "bin/repoguard.js",
+    "repoguard": "bin/repoguard.js"
+  },
+  "scripts": {
+    "test": "node bin/repoguard.js audit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/taylormatematica-beep/repoguard.git"
+  },
+  "keywords": [
+    "cursorrules",
+    "claude",
+    "windsurf",
+    "copilot",
+    "ai",
+    "architecture",
+    "linter",
+    "devtools",
+    "guardrails",
+    "pre-commit"
+  ],
+  "author": "Taylor Matem\u00e1tica",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/taylormatematica-beep/repoguard/issues"
+  },
+  "homepage": "https://taylormatematica-beep.github.io/repoguard/",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "bin",
+    "README.md",
+    "LICENSE"
+  ]
 }

@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const { analyzeDiff, scanDirectory, calculateHealthScore, formatGitHubComment, ARCHITECTURAL_RULES } = require('./analyzer');
+const { runGitHubActionPRReview, generatePRReviewMarkdown } = require('./commenter');
 
 // ANSI Colors for Terminal Output
 const colors = {
@@ -19,7 +20,9 @@ const colors = {
   cyan: "\x1b[36m",
   yellow: "\x1b[33m",
   red: "\x1b[31m",
-  magenta: "\x1b[35m"
+  magenta: "\x1b[35m",
+  bgRed: "\x1b[41m",
+  bgGreen: "\x1b[42m"
 };
 
 function logBanner() {
@@ -152,7 +155,12 @@ function generateGitHubAction() {
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
 
 jobs:
   audit:
@@ -165,16 +173,25 @@ jobs:
           fetch-depth: 0
 
       - name: Run RepoGuard Architecture Review
-        uses: repoguard-app/repoguard-action@v1
+        uses: taylormatematica-beep/repoguard@main
         with:
           github_token: \${{ secrets.GITHUB_TOKEN }}
           strict_mode: true
 `;
 }
 
-// Commands
+// Parse arguments
 const args = process.argv.slice(2);
 const command = args[0] || 'help';
+
+// GitHub Action Runner Check
+if (process.env.GITHUB_ACTIONS === 'true' && (!args[0] || args[0] === 'ci' || args[0] === 'action')) {
+  runGitHubActionPRReview().catch(err => {
+    console.error('RepoGuard CI Error:', err.message);
+    process.exit(1);
+  });
+  return;
+}
 
 logBanner();
 
@@ -189,20 +206,25 @@ if (command === 'init') {
   console.log(`  ${colors.green}✓${colors.reset} ORM/Data:  ${colors.bright}${stack.orm}${colors.reset}`);
   console.log(`  ${colors.green}✓${colors.reset} Directory: ${colors.bright}${stack.srcDir}/${colors.reset}\n`);
 
+  // 1. .cursorrules
   fs.writeFileSync(path.join(targetDir, '.cursorrules'), generateCursorRules(stack), 'utf8');
   console.log(`${colors.green}✨ Generated:${colors.reset} .cursorrules (For Cursor AI)`);
 
+  // 2. CLAUDE.md
   fs.writeFileSync(path.join(targetDir, 'CLAUDE.md'), generateClaudeMd(stack), 'utf8');
   console.log(`${colors.green}✨ Generated:${colors.reset} CLAUDE.md (For Claude Code CLI)`);
 
+  // 3. .windsurfrules
   fs.writeFileSync(path.join(targetDir, '.windsurfrules'), generateWindsurfRules(stack), 'utf8');
   console.log(`${colors.green}✨ Generated:${colors.reset} .windsurfrules (For Windsurf Cascade)`);
 
+  // 4. .github/copilot-instructions.md
   const githubDir = path.join(targetDir, '.github');
   if (!fs.existsSync(githubDir)) fs.mkdirSync(githubDir, { recursive: true });
   fs.writeFileSync(path.join(githubDir, 'copilot-instructions.md'), generateCopilotInstructions(stack), 'utf8');
   console.log(`${colors.green}✨ Generated:${colors.reset} .github/copilot-instructions.md (For GitHub Copilot)`);
 
+  // 5. GitHub Action Workflow
   const workflowsDir = path.join(githubDir, 'workflows');
   if (!fs.existsSync(workflowsDir)) fs.mkdirSync(workflowsDir, { recursive: true });
   fs.writeFileSync(path.join(workflowsDir, 'repoguard.yml'), generateGitHubAction(), 'utf8');
@@ -263,6 +285,7 @@ if (command === 'init') {
       process.exit(0);
     }
 
+    // Parse diff by file
     const fileDiffs = gitDiff.split('diff --git ');
     let violations = [];
 
@@ -280,7 +303,7 @@ if (command === 'init') {
       for (const v of violations) {
         console.log(`  - [${v.ruleId}] ${v.filename}:${v.lineNumber} -> ${v.message}`);
       }
-      console.log(`\n${colors.dim}Fix these issues before committing.${colors.reset}\n`);
+      console.log(`\n${colors.dim}Fix these issues or run with --ignore-guard to bypass.${colors.reset}\n`);
       process.exit(1);
     }
   } catch (e) {
@@ -290,18 +313,18 @@ if (command === 'init') {
 } else if (command === 'hook' && args[1] === 'install') {
   const hooksDir = path.join(targetDir, '.git', 'hooks');
   if (!fs.existsSync(hooksDir)) {
-    console.log(`${colors.red}Error: .git/hooks directory not found.${colors.reset}`);
+    console.log(`${colors.red}Error: .git/hooks directory not found. Is this a Git repository?${colors.reset}`);
     process.exit(1);
   }
 
-  const hookScript = `#!/bin/sh\n# RepoGuard Pre-Commit Hook\nnpx repoguard diff\n`;
+  const hookScript = `#!/bin/sh\n# RepoGuard Pre-Commit Architecture Hook\nnpx repoguard diff\n`;
   const hookPath = path.join(hooksDir, 'pre-commit');
   fs.writeFileSync(hookPath, hookScript, { mode: 0o755 });
   console.log(`${colors.green}✅ Pre-commit hook installed in .git/hooks/pre-commit!${colors.reset}`);
-  console.log(`${colors.dim}RepoGuard will automatically block any AI drift before commit.${colors.reset}\n`);
+  console.log(`${colors.dim}RepoGuard will now automatically block any AI code drift before it gets committed.${colors.reset}\n`);
 
-} else if (command === 'review') {
-  console.log(`${colors.cyan}🔬 Simulating PR review on sample AI-generated diff...${colors.reset}\n`);
+} else if (command === 'review' || command === 'preview-pr') {
+  console.log(`${colors.cyan}🔬 Simulating automated Pull Request comment for CI...${colors.reset}\n`);
   const sampleDiff = `
 + export async function getUserOrders(req: any, res: any) {
 +   const apiKey = "sk_live_9823478912389124";
@@ -311,8 +334,8 @@ if (command === 'init') {
 + }
 `;
   const violations = analyzeDiff(sampleDiff, 'src/controllers/order.controller.ts');
-  console.log(formatGitHubComment(violations));
-  console.log(`\n${colors.bright}${colors.yellow}Found ${violations.length} architectural issues!${colors.reset}\n`);
+  console.log(generatePRReviewMarkdown(violations, 8));
+  console.log(`\n${colors.bright}${colors.yellow}Summary: Found ${violations.length} architectural issue(s) that would be reported in the PR!${colors.reset}\n`);
 
 } else if (command === 'rules') {
   console.log(`${colors.bright}Active Architectural Guardrails (${ARCHITECTURAL_RULES.length} Rules):${colors.reset}\n`);

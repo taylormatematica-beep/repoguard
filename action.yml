@@ -1,0 +1,20 @@
+name: 'RepoGuard Architecture Audit'
+description: 'Automated architectural guardrails & rich PR review comments for AI-assisted code'
+author: 'Taylor Andrade'
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  github_token:
+    description: 'GitHub Token for posting review comments on Pull Requests'
+    required: false
+    default: ''
+  strict_mode:
+    description: 'Fail the CI check when blocking architectural violations are detected'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'node20'
+  main: 'bin/repoguard.js'

@@ -90,6 +90,9 @@ const ARCHITECTURAL_RULES = [
   }
 ];
 
+/**
+ * Analyzes a diff or raw file content against architectural guardrails
+ */
 function analyzeDiff(diffContent, filename) {
   const violations = [];
   const lines = diffContent.split('\n');
@@ -98,6 +101,7 @@ function analyzeDiff(diffContent, filename) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
+    // Check additions in git diff or regular lines
     if (line.startsWith('+') || !line.startsWith('-')) {
       currentLineNumber++;
       const cleanLine = line.replace(/^\+/, '');
@@ -123,6 +127,9 @@ function analyzeDiff(diffContent, filename) {
   return violations;
 }
 
+/**
+ * Recursively scans all codebase files in a directory (ignoring node_modules, .git, etc.)
+ */
 function scanDirectory(dir, extensions = ['.ts', '.tsx', '.js', '.jsx', '.py']) {
   const ignoreDirs = ['node_modules', '.git', 'dist', 'build', '.next', 'coverage', '.turbo'];
   let files = [];
@@ -144,6 +151,9 @@ function scanDirectory(dir, extensions = ['.ts', '.tsx', '.js', '.jsx', '.py']) 
   return files;
 }
 
+/**
+ * Calculates repository architectural health score (0 to 100)
+ */
 function calculateHealthScore(totalFiles, violations) {
   if (totalFiles === 0) return { score: 100, grade: 'A+' };
 
@@ -165,6 +175,9 @@ function calculateHealthScore(totalFiles, violations) {
   return { score, grade };
 }
 
+/**
+ * Formats violations into GitHub PR Review Markdown comment
+ */
 function formatGitHubComment(violations) {
   if (violations.length === 0) {
     return `### 🛡️ RepoGuard Architecture Audit: PASSED\n\n✅ No architectural guardrail violations detected in this Pull Request diff. Clean code!`;
