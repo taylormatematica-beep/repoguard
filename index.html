@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>RepoGuard v1.3.1 — Stop AI from Rotting Your Codebase Architecture</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300f2fe'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/></svg>">
   <style>
@@ -616,6 +619,11 @@
 </head>
 <body>
 
+  <div style="background: rgba(16, 185, 129, 0.1); border-bottom: 1px solid rgba(16, 185, 129, 0.2); padding: 8px 16px; text-align: center; font-size: 0.85rem; color: #cbd5e1;">
+    🇧🇷 <strong>Desenvolvedor no Brasil?</strong> Pague em Reais via <strong>PIX</strong> e tenha acesso imediato sem IOF: 
+    <a href="./br/" style="color: #00f2fe; font-weight: 700; text-decoration: underline; margin-left: 6px;">Acessar Versão Brasil (R$ 67) →</a>
+  </div>
+
   <header>
     <div class="container nav-inner">
       <a href="#" class="brand">
@@ -694,7 +702,25 @@
         </div>
 
         <div class="terminal-body" id="term-body">
-          <!-- Terminal content populated dynamically -->
+          <div class="cmd-line"><span class="prompt-symbol">$</span> <span>npx repoguard-rules audit</span></div>
+          <div style="color:#94a3b8;">🔍 Scanning entire codebase for architectural violations...</div>
+          <br>
+          <div style="color:#00f2fe; font-weight:bold;">====================================================</div>
+          <div style="color:#fff; font-weight:bold;">  ARCHITECTURAL HEALTH DASHBOARD</div>
+          <div style="color:#00f2fe; font-weight:bold;">====================================================</div>
+          <div>  Files Audited:    <strong style="color:#fff;">42</strong></div>
+          <div>  Total Violations: <strong style="color:#10b981;">0</strong></div>
+          <div class="score-badge-large">
+            <span>🛡️ Health Score: 100/100 [Grade: A+]</span>
+          </div>
+          <div style="color:#10b981; font-weight:600;">✨ Flawless architecture! Zero drift detected across all files.</div>
+          <br>
+          <div style="color:#64748b;">----------------------------------------------------</div>
+          <div style="color:#cbd5e1;">💡 <strong style="color:#fff;">Need automated PR blocking & custom rules for your team?</strong></div>
+          <div style="color:#94a3b8;">👉 Upgrade to <span style="color:#00f2fe;">RepoGuard Pro ($12/mo)</span> or <span style="color:#4facfe;">Team ($39/mo)</span>:</div>
+          <div style="color:#64748b;">   https://taylormatematica-beep.github.io/repoguard/#pricing</div>
+          <div style="color:#64748b;">----------------------------------------------------</div>
+          <span class="cursor-blink"></span>
         </div>
       </div>
 
@@ -940,6 +966,9 @@ export default async function UserProfile({ id }: <span class="code-fix">UserPro
             <li class="active"><span>✓</span> Dynamic Live Shields.io Health Badges</li>
           </ul>
           <a href="https://buy.stripe.com/dRm28tcsjcnC9On0kA6oo00" class="btn-plan primary">Subscribe for $12/mo</a>
+          <a href="https://pay.kiwify.com.br/qeXPeY8" class="btn-plan outline" style="margin-top: 10px; font-size: 0.88rem; border-color: rgba(16, 185, 129, 0.4); color: #34d399;">
+            🇧🇷 Pagar no PIX (R$ 67 à vista)
+          </a>
           <p style="font-size:0.75rem; color:var(--text-dim); text-align:center; margin-top:10px;">⚡ Instant activation • Cancel in 1 click</p>
         </div>
 
@@ -1103,10 +1132,12 @@ export default async function UserProfile({ id }: <span class="code-fix">UserPro
       });
     }
 
-    // Initialize with audit scenario
-    window.addEventListener('DOMContentLoaded', () => {
+    // Initialize with audit scenario immediately
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => runTerminalCommand('audit'));
+    } else {
       runTerminalCommand('audit');
-    });
+    }
   </script>
 </body>
 </html>
