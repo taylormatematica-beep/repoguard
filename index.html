@@ -11,18 +11,23 @@
       --bg-elevated: #161c24;
       --border: #232b36;
       --border-bright: #323d4d;
+      
       --accent-cyan: #00f2fe;
       --accent-blue: #4facfe;
       --accent-green: #2ecc71;
       --accent-yellow: #f59e0b;
       --accent-red: #ff4757;
+
       --text-main: #f1f5f9;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
+
       --font-mono: "JetBrains Mono", Menlo, Consolas, Monaco, monospace;
       --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-sans); }
+
     body {
       background-color: var(--bg-dark);
       color: var(--text-main);
@@ -31,7 +36,9 @@
       background-image: radial-gradient(rgba(79, 172, 254, 0.08) 1px, transparent 1px);
       background-size: 32px 32px;
     }
+
     .container { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
     header {
       border-bottom: 1px solid var(--border);
       background: rgba(10, 13, 18, 0.85);
@@ -78,6 +85,8 @@
       align-items: center;
       gap: 8px;
     }
+
+    /* Hero */
     .hero { padding: 75px 0 50px; text-align: center; }
     .hero-pill {
       display: inline-flex;
@@ -114,6 +123,8 @@
       margin: 0 auto 32px;
       line-height: 1.6;
     }
+
+    /* Multi-AI Compatibility Badges */
     .ai-badges {
       display: flex;
       justify-content: center;
@@ -134,6 +145,7 @@
       font-family: var(--font-mono);
     }
     .ai-badge span { color: var(--accent-cyan); font-weight: 700; }
+
     .cli-box {
       background: var(--bg-surface);
       border: 1px solid var(--border);
@@ -165,6 +177,8 @@
       font-family: var(--font-mono);
       cursor: pointer;
     }
+
+    /* Showcase Dual Windows */
     .showcase-dual {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -241,6 +255,8 @@
       border-radius: 4px;
     }
     .bot-text { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+
+    /* NEW: Health Dashboard Feature Section */
     .dashboard-feature {
       padding: 80px 0;
       border-top: 1px solid var(--border);
@@ -264,6 +280,8 @@
       font-weight: 800;
       font-size: 1.15rem;
     }
+
+    /* NEW: 8 Architectural Rules Table */
     .rules-section {
       padding: 85px 0;
       border-top: 1px solid var(--border);
@@ -309,6 +327,8 @@
     .tag-err { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
     .tag-warn { background: rgba(0, 242, 254, 0.15); color: var(--accent-cyan); }
     .tag-info { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+
+    /* The Problem / Pain Points */
     .pain-section {
       padding: 85px 0;
       border-top: 1px solid var(--border);
@@ -352,6 +372,8 @@
     .feature-icon { font-size: 1.8rem; margin-bottom: 16px; }
     .feature-card h3 { font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
     .feature-card p { font-size: 0.92rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* Pricing Section */
     .pricing-section {
       padding: 85px 0;
       border-top: 1px solid var(--border);
@@ -420,6 +442,7 @@
     .btn-plan.primary:hover { background: #33f5ff; }
     .btn-plan.outline { background: var(--bg-elevated); color: #fff; border: 1px solid var(--border-bright); }
     .btn-plan.outline:hover { border-color: #fff; }
+
     footer {
       border-top: 1px solid var(--border);
       padding: 40px 0;
@@ -428,6 +451,7 @@
       background: #080a0e;
     }
     .footer-inner { display: flex; justify-content: space-between; align-items: center; }
+
     @media (max-width: 768px) {
       .hero h1 { font-size: 2.4rem; }
       .showcase-dual { grid-template-columns: 1fr; }
@@ -462,6 +486,12 @@
 
   <section class="hero">
     <div class="container">
+      <div style="margin-bottom: 20px;">
+        <a href="https://www.producthunt.com/posts/repoguard" target="_blank" rel="noopener noreferrer">
+          <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=repoguard&theme=dark" alt="RepoGuard - Stop AI from turning your codebase into spaghetti | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" />
+        </a>
+      </div>
+
       <div class="hero-pill">
         🛡️ Guard Your Codebase Against Cursor & Copilot Rot
       </div>
@@ -475,6 +505,7 @@
         AI coding assistants write 300 lines in 5 seconds — and bypass all your layers. RepoGuard scans your stack, generates strict guardrails, and audits violations in real-time.
       </p>
 
+      <!-- Multi-AI Badges -->
       <div class="ai-badges">
         <div class="ai-badge"><span>✓</span> Cursor AI (.cursorrules)</div>
         <div class="ai-badge"><span>✓</span> Claude Code (CLAUDE.md)</div>
@@ -484,9 +515,9 @@
 
       <div class="cli-box">
         <div class="cli-command">
-          <span class="cli-prompt">$</span> npx repoguard init
+          <span class="cli-prompt">$</span> npx repoguard-rules init
         </div>
-        <button class="btn-copy" onclick="navigator.clipboard.writeText('npx repoguard init'); this.innerText='COPIED!';">
+        <button class="btn-copy" onclick="navigator.clipboard.writeText('npx repoguard-rules init'); this.innerText='COPIED!';">
           COPY
         </button>
       </div>
@@ -541,14 +572,15 @@
     </div>
   </section>
 
+  <!-- NEW: Health Dashboard Section -->
   <section class="dashboard-feature" id="dashboard">
     <div class="container">
       <div class="section-tag">Interactive CLI Intelligence</div>
       <h2 class="section-title">Architectural Health Score: Know Your Grade</h2>
-      <p class="section-subtitle">Run <code>npx repoguard audit</code> to scan your entire codebase and receive an instant architecture report card.</p>
+      <p class="section-subtitle">Run <code>npx repoguard-rules audit</code> to scan your entire codebase and receive an instant architecture report card.</p>
 
       <div class="dash-box">
-<span style="color:var(--accent-cyan); font-weight:700;">$ npx repoguard audit</span><br>
+<span style="color:var(--accent-cyan); font-weight:700;">$ npx repoguard-rules audit</span><br>
 🔍 Scanning entire codebase for architectural violations...<br><br>
 ====================================================<br>
   <strong>ARCHITECTURAL HEALTH DASHBOARD</strong><br>
@@ -562,6 +594,7 @@
     </div>
   </section>
 
+  <!-- NEW: 8 Architectural Rules Catalog -->
   <section class="rules-section" id="rules">
     <div class="container">
       <div class="section-tag">Strict Guardrails</div>
@@ -631,6 +664,7 @@
     </div>
   </section>
 
+  <!-- Pain Section -->
   <section class="pain-section">
     <div class="container">
       <div class="section-tag">The AI Debt Reality</div>
@@ -659,53 +693,110 @@
     </div>
   </section>
 
+  <!-- Pricing -->
   <section class="pricing-section" id="pricing">
     <div class="container">
       <div class="section-tag">Transparent Pricing</div>
       <h2 class="section-title">Built for Solo Hackers and Engineering Teams</h2>
+      <p style="color:var(--text-muted); max-width:680px; margin: 12px auto 0; font-size: 1.05rem; line-height: 1.6;">
+        A single AI-introduced architectural bug in production costs over <strong>$2,500</strong> in senior engineering refactoring hours. RepoGuard protects your codebase for less than a lunch.
+      </p>
 
       <div class="pricing-grid">
         <div class="price-box">
           <h3>Open Source</h3>
-          <p style="color:var(--text-muted); font-size:0.88rem;">For public repositories and solo builders</p>
+          <p style="color:var(--text-muted); font-size:0.88rem;">For public repositories and solo open-source builders</p>
           <div class="price-num">$0<span>/forever</span></div>
           <ul class="price-features">
             <li class="active">✓ Unlimited Local CLI runs</li>
             <li class="active">✓ Automatic .cursorrules generation</li>
             <li class="active">✓ CLAUDE.md & Windsurf generation</li>
             <li class="active">✓ Architectural Health Score (A+ to F)</li>
-            <li class="active">✓ 5 PR reviews / mo on Public Repos</li>
+            <li class="active">✓ Pre-commit drift blocking hook</li>
           </ul>
           <a href="https://github.com/taylormatematica-beep/repoguard" class="btn-plan outline">Install via GitHub</a>
         </div>
 
         <div class="price-box featured">
-          <div class="price-badge">POPULAR</div>
+          <div class="price-badge">MOST POPULAR</div>
           <h3>Developer Pro</h3>
-          <p style="color:var(--text-muted); font-size:0.88rem;">For independent engineers & freelancers</p>
+          <p style="color:var(--text-muted); font-size:0.88rem;">For independent engineers, contractors & freelancers</p>
           <div class="price-num">$12<span>/month</span></div>
-            <ul class="price-features">
+          <ul class="price-features">
             <li class="active">✓ Everything in Free</li>
-            <li class="active">✓ Unlimited Private Repos</li>
-            <li class="active">✓ Custom Architecture Rules</li>
+            <li class="active">✓ Unlimited Private Repositories</li>
+            <li class="active">✓ Automated PR Review Bot on PRs</li>
+            <li class="active">✓ Custom Architecture Rule Builder</li>
             <li class="active">✓ Automated Secret Leak Detection</li>
-            <li class="active">✓ Git Pre-Commit Hook Integration</li>
+            <li class="active">✓ Dynamic Live Shields.io Health Badges</li>
           </ul>
           <a href="https://buy.stripe.com/dRm28tcsjcnC9On0kA6oo00" class="btn-plan primary">Subscribe for $12/mo</a>
+          <p style="font-size:0.75rem; color:var(--text-dim); text-align:center; margin-top:10px;">⚡ Instant activation • Cancel in 1 click</p>
         </div>
 
         <div class="price-box">
           <h3>Engineering Team</h3>
-          <p style="color:var(--text-muted); font-size:0.88rem;">For startups & scaling tech teams</p>
+          <p style="color:var(--text-muted); font-size:0.88rem;">For startups & scaling engineering departments</p>
           <div class="price-num">$39<span>/month</span></div>
           <ul class="price-features">
             <li class="active">✓ Up to 5 Developers included</li>
-            <li class="active">✓ GitHub Organization App integration</li>
+            <li class="active">✓ GitHub Organization-wide enforcement</li>
+            <li class="active">✓ Strict PR Merge Blocker on CI/CD</li>
+            <li class="active">✓ SOC2 / ISO Architecture Audit Logs</li>
             <li class="active">✓ Slack & Discord alert webhooks</li>
-            <li class="active">✓ Architecture drift analytics</li>
-            <li class="active">✓ Priority support</li>
+            <li class="active">✓ Priority Discord/Email Support</li>
           </ul>
           <a href="https://buy.stripe.com/7sYbJ34ZRgDS1hR6IY6oo01" class="btn-plan outline">Upgrade Team ($39/mo)</a>
+          <p style="font-size:0.75rem; color:var(--text-dim); text-align:center; margin-top:10px;">💼 Expense-ready PDF invoice included</p>
+        </div>
+      </div>
+
+      <!-- Trust Badges & Guarantees -->
+      <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:28px; margin: 40px auto 0; max-width:850px; color:var(--text-muted); font-size:0.88rem;">
+        <div>🛡️ <strong>14-Day Money-Back Guarantee</strong></div>
+        <div>⚡ <strong>1-Click Cancellation via Stripe</strong></div>
+        <div>🧾 <strong>Automatic Tax-Deductible Invoices</strong></div>
+        <div>🔒 <strong>100% Code Privacy: Code never leaves your CI</strong></div>
+      </div>
+
+      <!-- 1-Click Expense Template -->
+      <div style="background:var(--bg-elevated); border: 1px dashed var(--border-bright); border-radius:12px; max-width:800px; margin: 50px auto 0; padding: 24px; text-align:left;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h4 style="color:#fff; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
+            💼 Expensing this to your company? (1-Click Manager Pitch)
+          </h4>
+          <button onclick="navigator.clipboard.writeText('Hi Manager, I would like to expense RepoGuard (repoguard.dev) for our team ($12/mo for solo or $39/mo for team). It automatically audits our pull requests to prevent AI-generated architectural rot from Cursor and Copilot, saving approximately 5-10 hours of manual senior code review every week. Invoices are automatically tax-compliant and generated by Stripe.'); alert('Pitch copied to clipboard! Paste it to your manager or Slack.');" style="background:rgba(0,242,254,0.1); border:1px solid var(--accent-cyan); color:var(--accent-cyan); padding:6px 14px; border-radius:6px; cursor:pointer; font-size:0.82rem; font-weight:600;">
+            📋 Copy Pitch to Clipboard
+          </button>
+        </div>
+        <p style="color:var(--text-muted); font-size:0.86rem; line-height:1.6; margin:0;">
+          <em>"Hi [Manager], I'd like to expense RepoGuard ($12/mo solo or $39/mo for team). It audits our PRs to prevent AI-generated architectural rot (bypassing ORMs, duplicate helpers, ': any' types), saving roughly 5-10 hours of senior code review every week."</em>
+        </p>
+      </div>
+
+      <!-- FAQ Section -->
+      <div style="max-width:800px; margin: 60px auto 0; text-align:left;">
+        <h3 style="color:#fff; font-size:1.4rem; text-align:center; margin-bottom:28px;">Frequently Asked Questions</h3>
+        
+        <div style="border-bottom:1px solid var(--border); padding: 16px 0;">
+          <h4 style="color:#fff; font-size:1rem; margin-bottom:6px;">Can I expense this to my company?</h4>
+          <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.6; margin:0;">
+            Yes, absolutely! Stripe automatically generates itemized, tax-deductible PDF invoices with your company name, VAT/EIN, and address. Almost all software engineering companies have an annual developer tooling budget.
+          </p>
+        </div>
+
+        <div style="border-bottom:1px solid var(--border); padding: 16px 0;">
+          <h4 style="color:#fff; font-size:1rem; margin-bottom:6px;">Does RepoGuard send my proprietary code to external servers?</h4>
+          <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.6; margin:0;">
+            <strong>Never.</strong> RepoGuard is built with privacy-first engineering. It runs 100% locally on your machine or inside your own GitHub Actions runner. Zero lines of proprietary source code are ever uploaded or stored externally.
+          </p>
+        </div>
+
+        <div style="border-bottom:1px solid var(--border); padding: 16px 0;">
+          <h4 style="color:#fff; font-size:1rem; margin-bottom:6px;">Can I cancel anytime?</h4>
+          <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.6; margin:0;">
+            Yes. You can cancel your subscription at any time with a single click inside your Stripe customer portal. No phone calls, no dark patterns, no cancellation fees.
+          </p>
         </div>
       </div>
     </div>
