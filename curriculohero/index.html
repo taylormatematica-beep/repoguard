@@ -605,6 +605,30 @@
       color: var(--text-dim);
       font-size: 0.85rem;
     }
+
+    /* MOBILE STICKY BOTTOM BAR */
+    .mobile-floating-bar {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(13, 19, 34, 0.95);
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 12px 20px;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+      align-items: center;
+      justify-content: space-between;
+    }
+    @media (max-width: 768px) {
+      .mobile-floating-bar {
+        display: flex;
+      }
+      body {
+        padding-bottom: 75px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -642,6 +666,17 @@
       <p class="hero-subtitle">
         Cole seu currículo e a vaga dos seus sonhos. Nossa IA escaneia as palavras-chave que faltam, avalia o impacto das suas frases e mostra sua nota real de compatibilidade em 5 segundos.
       </p>
+
+      <div style="display:flex; justify-content:center; gap:16px; margin-bottom:36px; flex-wrap:wrap;">
+        <a href="#simulador" class="btn-scan" style="text-decoration:none; padding:14px 28px; font-size:1rem;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Auditar Meu Currículo Grátis
+        </a>
+        <a href="https://pay.kiwify.com.br/QTjoY40" class="btn-buy-pix" style="padding:14px 28px; font-size:1rem;" target="_blank">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Comprar Kit Aprovado (R$ 27 no PIX)
+        </a>
+      </div>
     </section>
 
     <!-- INTERACTIVE SCANNER -->
@@ -726,48 +761,61 @@
           </div>
         </div>
 
-        <!-- UPSELL / KIWIFY OFFER -->
-        <div class="upsell-box">
-          <h3 class="upsell-title">Quer o seu Currículo 100% Otimizado e Aprovado? 🚀</h3>
-          <p class="upsell-sub">
-            Desbloqueie o <strong>Kit Aprovado CurriculoHero</strong>. Em menos de 2 minutos você recebe a versão reescrita na fórmula de impacto do Google, a carta de apresentação sob medida e o roteiro das 5 perguntas da entrevista.
-          </p>
+        </div>
 
-          <div class="deliverables-list">
-            <div class="deliverable-item">
-              <h4>📄 Currículo Reescrito</h4>
-              <p>Reestruturado na fórmula de impacto XYZ comprovada pelo Google para bater 95%+ nos filtros da Gupy.</p>
-            </div>
-            <div class="deliverable-item">
-              <h4>✉️ Carta de Apresentação</h4>
-              <p>Texto magnético e personalizado para chamar a atenção imediata do recrutador no LinkedIn ou e-mail.</p>
-            </div>
-            <div class="deliverable-item">
-              <h4>🎯 Guia da Entrevista</h4>
-              <p>As 5 perguntas eliminatórias que a empresa vai te fazer nessa vaga específica e como responder no método STAR.</p>
-            </div>
+        <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:12px; padding:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+          <div>
+            <h4 style="font-size:1.1rem; color:#fff; margin-bottom:4px;">Pronto para corrigir as palavras-chave e garantir a entrevista?</h4>
+            <p style="font-size:0.85rem; color:var(--text-muted);">Baixe o modelo Word aprovado e os prompts de IA para reescrever em 2 minutos.</p>
           </div>
+          <a href="https://pay.kiwify.com.br/QTjoY40" class="btn-buy-pix" style="padding:12px 24px; font-size:1rem;" target="_blank">
+            Destravar Aprovação por R$ 27 →
+          </a>
+        </div>
+      </div>
+    </section>
 
-          <div class="price-cta-row">
-            <div class="price-tag">
-              <span class="old-price">De R$ 97,00</span>
-              <span class="current-price">R$ 27,00</span>
-              <span style="color:var(--accent-green); font-weight:700; font-size:0.9rem;">(Acesso Imediato no PIX)</span>
-            </div>
+    <!-- STANDALONE PRICING & OFFER SECTION (ALWAYS VISIBLE) -->
+    <section id="precos" style="margin-bottom: 70px;">
+      <div class="upsell-box">
+        <h3 class="upsell-title">Quer o seu Currículo 100% Otimizado e Aprovado? 🚀</h3>
+        <p class="upsell-sub">
+          Desbloqueie o <strong>Kit Aprovado CurriculoHero</strong>. Em menos de 2 minutos você recebe a versão reescrita na fórmula de impacto do Google, a carta de apresentação sob medida e o roteiro das 5 perguntas da entrevista.
+        </p>
 
-            <!-- Kiwify checkout -->
-            <a href="https://pay.kiwify.com.br/QTjoY40" id="btn-kiwify-upsell" class="btn-buy-pix" target="_blank">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              Garantir Meu Kit Aprovado por R$ 27
-            </a>
-
-            <span class="guarantee-note">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              Garantia incondicional de 7 dias • Entrega digital imediata
-            </span>
+        <div class="deliverables-list">
+          <div class="deliverable-item">
+            <h4>📄 Modelo Editável (.DOCX)</h4>
+            <p>Template em Word em 1 coluna linear aprovado por robôs ATS, sem tabelas quebradas ou fontes incompatíveis.</p>
+          </div>
+          <div class="deliverable-item">
+            <h4>🤖 Prompts Mestres de IA</h4>
+            <p>Prompts prontos para DeepSeek e ChatGPT reescreverem seu histórico na fórmula de impacto XYZ do Google.</p>
+          </div>
+          <div class="deliverable-item">
+            <h4>🎯 Guia da Entrevista (Método STAR)</h4>
+            <p>As 5 perguntas eliminatórias que o recrutador vai fazer e os roteiros perfeitos para não travar na resposta.</p>
           </div>
         </div>
 
+        <div class="price-cta-row">
+          <div class="price-tag">
+            <span class="old-price">De R$ 97,00</span>
+            <span class="current-price">R$ 27,00</span>
+            <span style="color:var(--accent-green); font-weight:700; font-size:0.9rem;">(Acesso Imediato no PIX)</span>
+          </div>
+
+          <!-- Kiwify checkout -->
+          <a href="https://pay.kiwify.com.br/QTjoY40" id="btn-kiwify-upsell" class="btn-buy-pix" target="_blank">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Garantir Meu Kit Aprovado por R$ 27 no PIX
+          </a>
+
+          <span class="guarantee-note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Garantia incondicional de 7 dias • Entrega digital imediata na Kiwify
+          </span>
+        </div>
       </div>
     </section>
 
@@ -812,6 +860,17 @@
       <p style="margin-top: 8px; font-size: 0.78rem;">Não possuímos vínculo direto com a Gupy Tecnologia ou LinkedIn Inc. As marcas pertencem aos seus respectivos proprietários.</p>
     </div>
   </footer>
+
+  <!-- MOBILE STICKY BUY BUTTON -->
+  <div class="mobile-floating-bar">
+    <div>
+      <div style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Kit Aprovado Gupy</div>
+      <div style="font-size:1.15rem; font-weight:800; color:#fff;">R$ 27,00 <span style="font-size:0.75rem; color:var(--accent-green); font-weight:700;">(PIX)</span></div>
+    </div>
+    <a href="https://pay.kiwify.com.br/QTjoY40" class="btn-buy-pix" style="padding:10px 22px; font-size:0.92rem;" target="_blank">
+      Comprar no PIX →
+    </a>
+  </div>
 
   <script>
     const presets = {
