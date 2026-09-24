@@ -561,6 +561,81 @@
       gap: 6px;
     }
 
+    
+    /* MOBILE STICKY BOTTOM BAR */
+    .mobile-sticky-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(16, 185, 129, 0.5);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 9999;
+      box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.6);
+    }
+    .sticky-info {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+    .sticky-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #10b981;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .sticky-title {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .sticky-price {
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+    .sticky-price strong {
+      color: #10b981;
+      font-size: 0.95rem;
+    }
+    .sticky-btn {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 0.88rem;
+      padding: 10px 18px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+      transition: transform 0.15s;
+    }
+    .sticky-btn:active {
+      transform: scale(0.96);
+    }
+    @media (max-width: 600px) {
+      body {
+        padding-bottom: 70px !important;
+      }
+      .sticky-title {
+        font-size: 0.82rem;
+      }
+      .sticky-btn {
+        padding: 9px 14px;
+        font-size: 0.82rem;
+      }
+    }
+
     /* WHY SECTION */
     .section-title {
       font-size: 2rem;
@@ -664,7 +739,7 @@
         <a href="#simulador" class="btn-nav">
           Testar Grátis
         </a>
-        <a href="https://pay.kiwify.com.br/QTjoY40" class="btn-nav" style="background:#10b981; border-color:#059669; color:#fff;" target="_blank">
+        <a href="https://pay.kiwify.com.br/QTjoY40" class="btn-nav" onclick="trackKiwifyClick('navbar')" style="background:#10b981; border-color:#059669; color:#fff;" target="_blank">
           Kit Aprovado (R$ 27)
         </a>
       </div>
@@ -689,20 +764,34 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           Auditar Meu Currículo Grátis
         </a>
-        <a href="https://pay.kiwify.com.br/QTjoY40" class="btn-buy-pix" style="padding:14px 28px; font-size:1rem;" target="_blank">
+        <a href="https://pay.kiwify.com.br/QTjoY40" class="btn-buy-pix" onclick="trackKiwifyClick('hero_btn')" style="padding:14px 28px; font-size:1rem;" target="_blank">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
           Comprar Kit Aprovado (R$ 27 no PIX)
         </a>
       </div>
+    
+      <div style="background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 16px; padding: 18px; margin: 20px auto 0; text-align: left; max-width: 620px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <span style="background: rgba(99, 102, 241, 0.25); color:#a5b4fc; border:1px solid rgba(99, 102, 241, 0.4); padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 800;">📱 NO CELULAR?</span>
+          <span style="color: #f1f5f9; font-weight: 700; font-size: 0.92rem;">Sem o arquivo do currículo em mãos agora?</span>
+        </div>
+        <p style="font-size: 0.86rem; color: #94a3b8; line-height: 1.5; margin-bottom: 12px;">
+          O maior motivo de descarte na Gupy e LinkedIn são modelos coloridos do Canva com tabelas invisíveis para a IA. Baixe o <strong>Modelo Word Editável (.docx) em 1 coluna linear aprovado</strong> com os prompts mestres por apenas R$ 27 no PIX e receba no seu e-mail agora.
+        </p>
+        <a href="https://pay.kiwify.com.br/QTjoY40" class="btn-buy-pix" style="width: 100%; justify-content: center; padding: 12px 18px; font-size: 0.95rem; border-radius: 10px;" target="_blank" onclick="trackKiwifyClick('hero_mobile_banner')">
+          ⚡ Baixar Modelo Aprovado por R$ 27 no PIX (Acesso Imediato)
+        </a>
+      </div>
+
     </section>
 
     <!-- INTERACTIVE SCANNER -->
     <section class="tool-wrapper" id="simulador">
       <div class="preset-selector">
         <span class="preset-label">Exemplos Prontos:</span>
-        <button class="btn-preset active" onclick="loadPreset('dev')">💻 Dev Frontend (React / TypeScript)</button>
-        <button class="btn-preset" onclick="loadPreset('mkt')">📈 Analista de Marketing Digital</button>
-        <button class="btn-preset" onclick="loadPreset('adm')">📁 Assistente Administrativo / Financeiro</button>
+        <button class="btn-preset active" onclick="loadPreset('dev', this)">💻 Dev Frontend (React / TypeScript)</button>
+        <button class="btn-preset" onclick="loadPreset('mkt', this)">📈 Analista de Marketing Digital</button>
+        <button class="btn-preset" onclick="loadPreset('adm', this)">📁 Assistente Administrativo / Financeiro</button>
       </div>
 
       <div class="input-grid">
@@ -785,7 +874,7 @@
             <h4 style="font-size:1.1rem; color:#fff; margin-bottom:4px;">Pronto para corrigir as palavras-chave e garantir a entrevista?</h4>
             <p style="font-size:0.85rem; color:var(--text-muted);">Baixe o modelo Word aprovado e os prompts de IA para reescrever em 2 minutos.</p>
           </div>
-          <a href="https://pay.kiwify.com.br/QTjoY40" class="btn-buy-pix" style="padding:12px 24px; font-size:1rem;" target="_blank">
+          <a href="https://pay.kiwify.com.br/QTjoY40" class="btn-buy-pix" onclick="trackKiwifyClick('scan_results_btn')" style="padding:12px 24px; font-size:1rem;" target="_blank">
             Destravar Aprovação por R$ 27 →
           </a>
         </div>
@@ -823,7 +912,7 @@
           </div>
 
           <!-- Kiwify checkout -->
-          <a href="https://pay.kiwify.com.br/QTjoY40" id="btn-kiwify-upsell" class="btn-buy-pix" target="_blank">
+          <a href="https://pay.kiwify.com.br/QTjoY40" id="btn-kiwify-upsell" class="btn-buy-pix" onclick="trackKiwifyClick('pricing_box')" target="_blank">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             Garantir Meu Kit Aprovado por R$ 27 no PIX
           </a>
@@ -884,7 +973,7 @@
       <div style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Kit Aprovado Gupy</div>
       <div style="font-size:1.15rem; font-weight:800; color:#fff;">R$ 27,00 <span style="font-size:0.75rem; color:var(--accent-green); font-weight:700;">(PIX)</span></div>
     </div>
-    <a href="https://pay.kiwify.com.br/QTjoY40" class="btn-buy-pix" style="padding:10px 22px; font-size:0.92rem;" target="_blank">
+    <a href="https://pay.kiwify.com.br/QTjoY40" class="btn-buy-pix" onclick="trackKiwifyClick('footer_cta')" style="padding:10px 22px; font-size:0.92rem;" target="_blank">
       Comprar no PIX →
     </a>
   </div>
@@ -947,13 +1036,35 @@ Requisitos Obrigatórios:
       }
     };
 
-    function loadPreset(type) {
-      document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
+    function trackKiwifyClick(origin) {
+      try {
+        if (typeof gtag === 'function') {
+          gtag('event', 'begin_checkout', {
+            'event_category': 'ecommerce',
+            'event_label': origin || 'kiwify_checkout',
+            'value': 27.0,
+            'currency': 'BRL'
+          });
+        }
+      } catch(e) {
+        console.warn('Tracking error:', e);
+      }
+    }
 
-      document.getElementById('cv-text').value = presets[type].cv;
-      document.getElementById('job-text').value = presets[type].job;
-      updateWordCount();
+    function loadPreset(type, el) {
+      document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+      if (el) {
+        el.classList.add('active');
+      } else {
+        const first = document.querySelector('.btn-preset');
+        if (first) first.classList.add('active');
+      }
+
+      if (presets[type]) {
+        document.getElementById('cv-text').value = presets[type].cv;
+        document.getElementById('job-text').value = presets[type].job;
+        updateWordCount();
+      }
     }
 
     function updateWordCount() {
@@ -1113,5 +1224,18 @@ Requisitos Obrigatórios:
     // Initialize with developer preset
     loadPreset('dev');
   </script>
+
+  <!-- MOBILE STICKY BOTTOM BAR -->
+  <aside class="mobile-sticky-bar" aria-label="Oferta Especial Kit Aprovado">
+    <div class="sticky-info">
+      <span class="sticky-badge">🔥 OFERTA DE LANÇAMENTO</span>
+      <span class="sticky-title">Kit Aprovado na Gupy</span>
+      <span class="sticky-price">De R$ 97 por <strong>R$ 27 no PIX</strong></span>
+    </div>
+    <a href="https://pay.kiwify.com.br/QTjoY40" class="sticky-btn" target="_blank" onclick="trackKiwifyClick('mobile_sticky_bar')">
+      Comprar Agora ➔
+    </a>
+  </aside>
+
 </body>
 </html>
