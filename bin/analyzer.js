@@ -19,6 +19,16 @@ const ARCHITECTURAL_RULES = [
     suggestion: () => `const result = await entityService.find(params);`
   },
   {
+    id: 'RULE-PY-01',
+    name: 'FastAPI Layer Separation / No Raw DB Queries in Routers',
+    severity: 'warning',
+    category: 'Architecture',
+    filePattern: /\.py$/i,
+    pattern: /(db|session|connection)\.(query|execute|exec|scalars|add|delete|commit|flush|refresh)\s*\(/i,
+    message: 'Direct database/ORM access is prohibited inside FastAPI route handlers. Encapsulate database operations inside a service or repository layer.',
+    suggestion: () => `return userService.get_users();`
+  },
+  {
     id: 'RULE-02',
     name: 'Hardcoded Secret / Credential Leak',
     severity: 'critical',
@@ -93,8 +103,109 @@ const ARCHITECTURAL_RULES = [
 /**
  * Analyzes a diff or raw file content against architectural guardrails
  */
+function analyzePythonFastAPIRoutes(content, filename) {
+  const violations = [];
+  const lines = content.split('\n');
+
+  let insideRoute = false;
+  let routeIndent = -1;
+  let routeDecorator = false;
+  let currentLineNumber = 0;
+  let isDiff = lines.some(line => /^@@ /.test(line));
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (isDiff && line.startsWith('@@ ')) {
+      const match = line.match(/^\@\@ -\d+(?:,\d+)? \+(\d+)/);
+
+      if (match) {
+        currentLineNumber = Number(match[1]) - 1;
+      }
+
+      continue;
+    }
+    // Ignore deleted lines from Git diffs.
+    if (line.startsWith('-') && !line.startsWith('---')) {
+      continue;
+    }
+
+    // Remove the Git diff "+" marker from added lines.
+    const cleanLine = line.startsWith('+') ? line.slice(1) : line;
+    if (isDiff) {
+      currentLineNumber++;
+    }
+    const trimmed = cleanLine.trim();
+
+    // Detect FastAPI route decorators.
+    if (/^@(router|app)\.(get|post|put|delete|patch)\s*\(/i.test(trimmed)) {
+      routeDecorator = true;
+      continue;
+    }
+
+    // The function immediately following the route decorator is the route handler.
+    if (
+      routeDecorator &&
+      /^(async\s+)?def\s+\w+\s*\(/.test(trimmed)
+    ) {
+      insideRoute = true;
+      routeDecorator = false;
+      routeIndent = line.search(/\S/);
+      continue;
+    }
+
+    // Ignore blank lines.
+    if (!trimmed) {
+      continue;
+    }
+
+    const indentation = line.search(/\S/);
+
+    // A new function/class at the same or lower indentation means
+    // the previous route has ended.
+    if (
+      insideRoute &&
+      indentation <= routeIndent &&
+      /^(async\s+)?(def|class)\s+\w+/.test(trimmed)
+    ) {
+      insideRoute = false;
+    }
+
+    // If we are not inside a FastAPI route, do nothing.
+    if (!insideRoute) {
+      continue;
+    }
+
+    const dbOperation =
+      /\b(db|session|connection)\.(query|execute|exec|scalars|add|delete|commit|flush|refresh)\s*\(/i;
+
+    if (dbOperation.test(trimmed)) {
+      const isCommit = /\.commit\s*\(/i.test(trimmed);
+
+      violations.push({
+        ruleId: 'RULE-PY-01',
+        ruleName: 'FastAPI Layer Separation / No Raw DB Queries in Routers',
+        severity: isCommit ? 'critical' : 'warning',
+        category: 'Architecture',
+        filename: filename,
+        lineNumber: isDiff ? currentLineNumber : i + 1,
+        codeSnippet: trimmed,
+        message: isCommit
+          ? 'Direct database transaction commit detected inside a FastAPI route handler. Database mutations and transaction management must be encapsulated inside a service or repository layer.'
+          : 'Direct database/ORM access detected inside a FastAPI route handler. Encapsulate database operations inside a service or repository layer.',
+        suggestion: 'Delegate database operations to a service or repository.'
+      });
+    }
+  }
+
+  return violations;
+}
+
+
 function analyzeDiff(diffContent, filename) {
   const violations = [];
+  if (/\.py$/i.test(filename)) {
+    violations.push(...analyzePythonFastAPIRoutes(diffContent, filename));
+  }
   const lines = diffContent.split('\n');
   let currentLineNumber = 0;
 
@@ -107,6 +218,9 @@ function analyzeDiff(diffContent, filename) {
       const cleanLine = line.replace(/^\+/, '');
 
       for (const rule of ARCHITECTURAL_RULES) {
+        if (rule.id === 'RULE-PY-01') {
+          continue;
+        }
         if (rule.filePattern.test(filename) && rule.pattern.test(cleanLine)) {
           violations.push({
             ruleId: rule.id,

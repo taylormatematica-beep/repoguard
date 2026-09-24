@@ -8,7 +8,8 @@
     "repoguard": "bin/repoguard.js"
   },
   "scripts": {
-    "test": "node bin/repoguard.js audit"
+    "test": "node bin/repoguard.js audit",
+    "test:python-fastapi": "node test/python-fastapi.test.js"
   },
   "repository": {
     "type": "git",
