@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GolpeHero — IA Anti-Golpe & Proteção Familiar no WhatsApp e PIX</title>
+  <meta name="description" content="Descubra se aquela mensagem, SMS, chave PIX ou link é golpe em 3 segundos. Inteligência artificial gratuita contra fraudes financeiras e engenharia social.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2310b981'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-dark: #0a0f1d;
+      --card-bg: #111827;
+      --card-border: #1f2937;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-amber: #f59e0b;
+      --accent-cyan: #06b6d4;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(239, 68, 68, 0.10) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(6, 182, 212, 0.05) 0px, transparent 50%);
+      background-attachment: fixed;
+      padding-bottom: 75px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* HEADER */
+    header {
+      border-bottom: 1px solid var(--card-border);
+      background: rgba(10, 15, 29, 0.85);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 72px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #10b981, #047857);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+    }
+
+    .brand-name {
+      font-weight: 800;
+      font-size: 1.35rem;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-name span {
+      color: var(--accent-green);
+    }
+
+    .brand-badge {
+      font-size: 0.72rem;
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .btn-nav {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-nav:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #4b5563;
+    }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 48px 0 32px;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 6px 14px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      color: #fca5a5;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-red);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent-red);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    .hero-title {
+      font-size: 2.8rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+      max-width: 850px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .gradient-red {
+      background: linear-gradient(135deg, #f87171, #ef4444);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .gradient-green {
+      background: linear-gradient(135deg, #34d399, #10b981);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 700px;
+      margin: 0 auto 28px;
+      line-height: 1.5;
+    }
+
+    /* TOOL SECTION */
+    .tool-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+      margin-bottom: 40px;
+    }
+
+    .preset-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .preset-grid {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .btn-preset {
+      background: rgba(31, 41, 55, 0.6);
+      border: 1px solid var(--card-border);
+      color: #d1d5db;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-preset:hover {
+      background: rgba(55, 65, 81, 0.8);
+      border-color: #4b5563;
+      color: #fff;
+    }
+    .btn-preset.active {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--accent-green);
+      color: #34d399;
+    }
+
+    .textarea-wrapper {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .msg-input {
+      width: 100%;
+      height: 140px;
+      background: #0d1322;
+      border: 1px solid #1f293d;
+      border-radius: 14px;
+      padding: 16px;
+      color: #fff;
+      font-size: 0.98rem;
+      resize: vertical;
+      line-height: 1.5;
+      transition: border-color 0.2s;
+    }
+    .msg-input:focus {
+      outline: none;
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+
+    .btn-audit {
+      width: 100%;
+      background: linear-gradient(135deg, #10b981, #059669);
+      border: none;
+      color: #fff;
+      font-size: 1.15rem;
+      font-weight: 800;
+      padding: 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.5);
+      transition: all 0.2s;
+    }
+    .btn-audit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px -5px rgba(16, 185, 129, 0.7);
+    }
+
+    /* RESULTS CONTAINER */
+    .result-box {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid var(--card-border);
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .verdict-header {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .gauge-wrapper {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: conic-gradient(var(--accent-red) 0% 98%, rgba(255,255,255,0.05) 98% 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .gauge-inner {
+      width: 80px;
+      height: 80px;
+      background: var(--card-bg);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .gauge-val {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--accent-red);
+      line-height: 1;
+    }
+    .gauge-label {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .verdict-texts {
+      flex: 1;
+      min-width: 250px;
+    }
+    .verdict-badge {
+      display: inline-block;
+      font-size: 0.78rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .badge-red {
+      background: rgba(239, 68, 68, 0.25);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.5);
+    }
+    .badge-green {
+      background: rgba(16, 185, 129, 0.25);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.5);
+    }
+    .verdict-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .verdict-desc {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .detail-card {
+      background: rgba(17, 24, 39, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 18px;
+    }
+    .detail-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .detail-list {
+      list-style: none;
+      font-size: 0.88rem;
+      color: #d1d5db;
+    }
+    .detail-list li {
+      margin-bottom: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    /* WHATSAPP SHARE BUTTON */
+    .btn-share-whatsapp {
+      background: #25d366;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 1.05rem;
+      padding: 16px 24px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 8px 25px -5px rgba(37, 211, 102, 0.4);
+      transition: all 0.2s;
+      margin-bottom: 32px;
+      width: 100%;
+    }
+    .btn-share-whatsapp:hover {
+      background: #22bf5b;
+      transform: translateY(-2px);
+    }
+
+    /* UPSELL OFFER BOX */
+    .upsell-box {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+      margin-bottom: 60px;
+    }
+    .upsell-tag {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+    .upsell-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+    .upsell-desc {
+      color: var(--text-muted);
+      font-size: 0.98rem;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      max-width: 800px;
+    }
+    .deliverables-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .deliverable-item {
+      background: rgba(17, 24, 39, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .deliverable-item h4 {
+      color: #fff;
+      font-size: 1rem;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .deliverable-item p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .cta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .price-col {
+      display: flex;
+      flex-direction: column;
+    }
+    .old-price {
+      text-decoration: line-through;
+      color: var(--text-dim);
+      font-size: 0.9rem;
+    }
+    .current-price {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.1;
+    }
+    .current-price small {
+      font-size: 1rem;
+      color: var(--accent-green);
+    }
+    .btn-buy-pix {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      text-decoration: none;
+      padding: 16px 36px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 1.1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 10px 30px -5px rgba(16, 185, 129, 0.5);
+      transition: all 0.2s;
+    }
+    .btn-buy-pix:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 35px -5px rgba(16, 185, 129, 0.7);
+    }
+
+    /* MOBILE STICKY BAR */
+    .mobile-sticky-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(10, 15, 29, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(16, 185, 129, 0.4);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 9999;
+      box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.6);
+    }
+    .sticky-info {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+    .sticky-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #10b981;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .sticky-title {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .sticky-price {
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+    .sticky-price strong {
+      color: #10b981;
+      font-size: 0.95rem;
+    }
+    .sticky-btn {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 0.88rem;
+      padding: 10px 18px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    }
+
+    @media (max-width: 768px) {
+      .hero-title { font-size: 2.1rem; }
+      .details-grid { grid-template-columns: 1fr; }
+      .verdict-header { flex-direction: column; text-align: center; }
+      .cta-row { flex-direction: column; text-align: center; }
+      .btn-buy-pix { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="container header-content">
+      <a href="#" class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <div class="brand-name">Golpe<span>Hero</span></div>
+        </div>
+        <span class="brand-badge">IA Anti-Golpe</span>
+      </a>
+
+      <div style="display:flex; gap:10px; align-items:center;">
+        <a href="#consultar" class="btn-nav">Consultar Grátis</a>
+        <a href="#kit" class="btn-nav" style="background:#10b981; border-color:#059669; color:#fff;">Kit Proteção (R$ 19)</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- HERO -->
+    <section class="hero" id="consultar">
+      <div class="hero-tag">
+        <span class="pulse-dot"></span>
+        Mais de 40 milhões de brasileiros sofrem tentativas de golpe todos os meses
+      </div>
+      <h1 class="hero-title">
+        Descubra se aquela mensagem, SMS ou chave PIX é um <span class="gradient-red">GOLPE</span> em 3 segundos
+      </h1>
+      <p class="hero-subtitle">
+        Cole a mensagem suspeita que você ou sua família receberam. Nossa inteligência artificial analisa táticas de engenharia social, falsos parentes, cobranças forjadas e links maliciosos antes do prejuízo acontecer.
+      </p>
+    </section>
+
+    <!-- INTERACTIVE AUDITOR TOOL -->
+    <section class="tool-box">
+      <div class="preset-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+        Exemplos dos Golpes Mais Comuns no Brasil:
+      </div>
+      <div class="preset-grid">
+        <button class="btn-preset active" onclick="loadScamPreset('filho', this)">📱 "Oi mãe, número novo..."</button>
+        <button class="btn-preset" onclick="loadScamPreset('correios', this)">📦 Falso Correios / Taxa Retida</button>
+        <button class="btn-preset" onclick="loadScamPreset('banco', this)">🏦 Falsa Central de Banco (Compra)</button>
+        <button class="btn-preset" onclick="loadScamPreset('gov', this)">💸 Resgate de Valores a Receber</button>
+        <button class="btn-preset" onclick="loadScamPreset('tarefas', this)">💼 Ganhe R$ 300 curtindo vídeos</button>
+      </div>
+
+      <div class="textarea-wrapper">
+        <textarea id="msg-input" class="msg-input" placeholder="Cole aqui a mensagem recebida no WhatsApp, SMS, link suspeito ou mensagem de parente..."></textarea>
+      </div>
+
+      <button class="btn-audit" onclick="runScamAudit()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Auditar Mensagem com IA Grátis
+      </button>
+
+      <!-- RESULTS SECTION -->
+      <div class="result-box" id="result-box">
+        <div class="verdict-header" id="verdict-header">
+          <div class="gauge-wrapper" id="gauge-circle">
+            <div class="gauge-inner">
+              <span class="gauge-val" id="score-val">98%</span>
+              <span class="gauge-label">Risco</span>
+            </div>
+          </div>
+          <div class="verdict-texts">
+            <span class="verdict-badge badge-red" id="verdict-badge">🚨 ALTO RISCO DE GOLPE CONFIRMADO</span>
+            <h3 class="verdict-title" id="verdict-title">Golpe do Falso Parente / Número Novo</h3>
+            <p class="verdict-desc" id="verdict-desc">
+              Esta mensagem utiliza a tática clássica de engenharia social de se passar por um filho ou familiar que "trocou de aparelho" para solicitar uma transferência financeira de emergência em nome de um terceiro.
+            </p>
+          </div>
+        </div>
+
+        <div class="details-grid">
+          <div class="detail-card">
+            <h4 class="detail-title" style="color:#f87171;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Sinais Críticos de Alerta (Red Flags)
+            </h4>
+            <ul class="detail-list" id="red-flags-list">
+              <li>🚩 Criação de senso de urgência financeira forçada.</li>
+              <li>🚩 Alegação de aparelho quebrado ou número provisório.</li>
+              <li>🚩 Chave PIX fornecida em nome de pessoa física desconhecida.</li>
+            </ul>
+          </div>
+
+          <div class="detail-card">
+            <h4 class="detail-title" style="color:#34d399;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              O que fazer IMEDIATAMENTE:
+            </h4>
+            <ul class="detail-list" id="actions-list">
+              <li>🛑 <strong>NÃO envie dinheiro nem PIX</strong> sob nenhuma hipótese.</li>
+              <li>📞 Ligue para o número ANTIGO do seu familiar por chamada convencional.</li>
+              <li>🚫 Bloqueie e denuncie o contato no WhatsApp.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- WHATSAPP VIRAL SHARE BUTTON -->
+        <a href="#" id="whatsapp-share-btn" class="btn-share-whatsapp" target="_blank">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+          🚨 Compartilhar Alerta no WhatsApp da Família
+        </a>
+      </div>
+    </section>
+
+    <!-- UPSELL: KIT PROTEÇÃO FAMÍLIA -->
+    <section class="upsell-box" id="kit">
+      <span class="upsell-tag">🛡️ SEGURANÇA TOTAL PARA SUA CASA</span>
+      <h3 class="upsell-title">Kit Proteção Família + Guia de Recuperação de PIX</h3>
+      <p class="upsell-desc">
+        Você sabia que o Banco Central tem uma ferramenta oficial chamada <strong>MED (Mecanismo Especial de Devolução)</strong> capaz de bloquear e recuperar PIX transferido para contas de golpistas em até 72 horas? Desbloqueie o material completo para blindar o celular dos seus pais e filhos contra fraudes.
+      </p>
+
+      <div class="deliverables-grid">
+        <div class="deliverable-item">
+          <h4>📄 Roteiro de Recuperação de PIX (MED)</h4>
+          <p>Passo a passo com os textos jurídicos exatos para acionar a devolução de emergência pelo app do banco e Banco Central.</p>
+        </div>
+        <div class="deliverable-item">
+          <h4>🚨 Manual dos 25 Golpes Mais Comuns</h4>
+          <p>O guia visual para imprimir ou enviar no WhatsApp da família ensinando a reconhecer falsos motoboys, 0800 forjado e clonagem.</p>
+        </div>
+        <div class="deliverable-item">
+          <h4>⚖️ Notificação Extrajudicial Bancária</h4>
+          <p>Modelo pronto de contestação baseado na Súmula 479 do STJ (que obriga o banco a indenizar falhas de segurança).</p>
+        </div>
+      </div>
+
+      <div class="cta-row">
+        <div class="price-col">
+          <span class="old-price">De R$ 67,00</span>
+          <div class="current-price">R$ 19,90 <small>no PIX</small></div>
+          <span style="font-size:0.8rem; color:#94a3b8;">Acesso Vitalício • Entrega Instantânea</span>
+        </div>
+
+        <a href="https://pay.kiwify.com.br/QTjoY40" class="btn-buy-pix" target="_blank">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Garantir Kit Proteção Família (R$ 19,90 no PIX)
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- MOBILE STICKY BAR -->
+  <aside class="mobile-sticky-bar">
+    <div class="sticky-info">
+      <span class="sticky-badge">🛡️ PROTEÇÃO FAMÍLIA</span>
+      <span class="sticky-title">Como Recuperar PIX de Golpe</span>
+      <span class="sticky-price">De R$ 67 por <strong>R$ 19,90 no PIX</strong></span>
+    </div>
+    <a href="https://pay.kiwify.com.br/QTjoY40" class="sticky-btn" target="_blank">
+      Baixar Guia ➔
+    </a>
+  </aside>
+
+  <script>
+    const scamPresets = {
+      filho: {
+        text: "Oi mãe! Troquei de celular porque o meu quebrou e a tela pifou. Salva esse meu novo número aí na sua agenda! Mãe, você consegue me fazer um PIX de R$ 850 urgente pra eu pagar um fornecedor agora? Eu te devolvo amanhã sem falta, a chave PIX é: carlos.pagamentos@email.com",
+        type: "Golpe do Falso Parente / Filho com Número Novo",
+        risk: 98,
+        desc: "Tentativa clássica de engenharia social emocional. O criminoso compra fotos públicas da família nas redes e finge que o filho perdeu o aparelho para exigir transferências urgentes.",
+        redFlags: [
+          "Criação forçada de urgência financeira ('urgente pra pagar agora')",
+          "Chave PIX em nome de terceiro desconhecido ou e-mail estranho",
+          "Alegação de aparelho quebrado ou número novo sem aviso prévio"
+        ],
+        actions: [
+          "NUNCA transfira dinheiro para esse número",
+          "Ligue por chamada convencional para o número antigo do seu filho",
+          "Faça uma pergunta íntima que só o seu filho saberia responder (ex: nome do cachorro de infância)"
+        ]
+      },
+      correios: {
+        text: "CORREIOS AVISO: Seu pacote com código BR894218932 foi retido na fiscalização aduaneira por falta de recolhimento de taxa. Acesse o link oficial para regularizar em até 24h e evitar o descarte: https://correios-rastreio-taxas-gov.online/pagar",
+        type: "Golpe do Falso Frete / Taxa Falsa dos Correios",
+        risk: 99,
+        desc: "Phishing financeiro em massa. Os golpistas criam páginas idênticas à dos Correios para gerar cobranças falsas no PIX para mercadorias que nunca existiram.",
+        redFlags: [
+          "Domínio não oficial (.online em vez de correios.com.br oficial)",
+          "Ameaça de descarte ou bloqueio em 24h para acelerar o pagamento",
+          "Cobrança direta via PIX para intermediador financeiro fantasma"
+        ],
+        actions: [
+          "NUNCA clique no link enviado por SMS",
+          "Consulte o rastreamento apenas pelo app oficial dos Correios baixado na Play Store/App Store",
+          "Bloqueie o remetente do SMS"
+        ]
+      },
+      banco: {
+        text: "NUBANK INFORMA: Compra aprovada nas Lojas Americanas no valor de R$ 3.850,00 às 14:12. Caso não reconheça esta transação, ligue imediatamente para nossa Central de Cancelamento no 0800 892 4120.",
+        type: "Golpe da Falsa Central Telefônica de Banco",
+        risk: 96,
+        desc: "O criminoso usa um número 0800 falso com bina forjada e musiquinha de banco para induzir a vítima a fazer um 'PIX de segurança' para cancelar uma compra que nunca existiu.",
+        redFlags: [
+          "Número 0800 falso (bancos nunca enviam SMS pedindo para ligar para 0800)",
+          "Compra de valor alto (R$ 3.000+) para causar pânico imediato na vítima",
+          "Tentativa de fazer a pessoa ligar em desespero"
+        ],
+        actions: [
+          "NÃO ligue para o número 0800 informado na mensagem",
+          "Abra o app do seu banco no celular e verifique a fatura (ela estará normal)",
+          "Ligue apenas para o telefone impresso no verso do seu cartão de crédito físico"
+        ]
+      },
+      gov: {
+        text: "BANCO CENTRAL: Você possui valores a receber no valor de R$ 4.280,50 esquecidos em instituições financeiras. Para solicitar o resgate imediato via PIX, acesse agora: https://resgate-gov-valores.site/chave",
+        type: "Golpe do Resgate de Dinheiro Esquecido (Falso Gov)",
+        risk: 97,
+        desc: "Exploração de falsos benefícios governamentais. A vítima acessa o site, digita o CPF e o sistema falso cobra uma 'taxa de transferência de R$ 67' para liberar o suposto dinheiro.",
+        redFlags: [
+          "Domínio falso (.site em vez do domínio oficial .gov.br)",
+          "Promessa de dinheiro fácil e imediato esquecido",
+          "Cobrança de 'tarifa de liberação' para receber o valor"
+        ],
+        actions: [
+          "Nenhum órgão do governo cobra taxa prévia para devolver dinheiro",
+          "O único site oficial para consultar valores a receber é: valoresareceber.bcb.gov.br",
+          "Nunca pague nenhuma taxa para receber benefício"
+        ]
+      },
+      tarefas: {
+        text: "Olá! Sou Mariana do departamento de RH do TikTok. Estamos contratando pessoas para trabalhar 20 minutos por dia curtindo vídeos no YouTube e avaliando produtos na Amazon. Pagamento diário de R$ 300 a R$ 1.500 no PIX. Chame no Telegram: @mariana_vagas_online",
+        type: "Golpe da Falsa Renda Extra / Tarefas no Telegram",
+        risk: 95,
+        desc: "Esquema de pirâmide de tarefas. No início eles pagam R$ 10 de verdade para ganhar confiança, e depois exigem depósitos de R$ 200, R$ 500 ou R$ 2.000 como 'garantia' para liberar tarefas maiores.",
+        redFlags: [
+          "Promessa de ganhos absurdos (R$ 300 a R$ 1.500 por 20 minutos de trabalho)",
+          "Migração da conversa para grupos fechados do Telegram",
+          "Exigência de depósito prévio para destravar lucros"
+        ],
+        actions: [
+          "Empresas reais nunca contratam por mensagens não solicitadas no WhatsApp",
+          "NUNCA faça depósito para receber comissões de trabalho",
+          "Bloqueie e denuncie a conta de imediato"
+        ]
+      }
+    };
+
+    function loadScamPreset(type, el) {
+      document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+      if (el) el.classList.add('active');
+
+      const preset = scamPresets[type];
+      if (preset) {
+        document.getElementById('msg-input').value = preset.text;
+        runScamAudit();
+      }
+    }
+
+    function runScamAudit() {
+      const text = document.getElementById('msg-input').value.trim();
+      const resultBox = document.getElementById('result-box');
+      resultBox.style.display = 'block';
+
+      // Check against keywords and presets
+      let score = 30;
+      let scamType = "Análise Preliminar de Conteúdo";
+      let desc = "A mensagem apresenta traços incomuns, mas requer cautela.";
+      let redFlags = ["Texto com padrões não identificados com certeza."];
+      let actions = ["Verifique a procedência antes de clicar ou enviar dinheiro."];
+
+      const lower = text.toLowerCase();
+
+      if (lower.includes('mãe') || lower.includes('pai') || lower.includes('número novo') || lower.includes('troquei de celular') || lower.includes('meu quebrou')) {
+        const p = scamPresets.filho;
+        score = p.risk; scamType = p.type; desc = p.desc; redFlags = p.redFlags; actions = p.actions;
+      } else if (lower.includes('correios') || lower.includes('retido') || lower.includes('alfândega') || lower.includes('taxa') || lower.includes('rastreio')) {
+        const p = scamPresets.correios;
+        score = p.risk; scamType = p.type; desc = p.desc; redFlags = p.redFlags; actions = p.actions;
+      } else if (lower.includes('compra aprovada') || lower.includes('nubank') || lower.includes('itaú') || lower.includes('bradesco') || lower.includes('0800') || lower.includes('central')) {
+        const p = scamPresets.banco;
+        score = p.risk; scamType = p.type; desc = p.desc; redFlags = p.redFlags; actions = p.actions;
+      } else if (lower.includes('valores a receber') || lower.includes('banco central') || lower.includes('esquecidos') || lower.includes('resgate')) {
+        const p = scamPresets.gov;
+        score = p.risk; scamType = p.type; desc = p.desc; redFlags = p.redFlags; actions = p.actions;
+      } else if (lower.includes('curtindo') || lower.includes('tarefa') || lower.includes('telegram') || lower.includes('renda extra') || lower.includes('trabalhar 20 minutos')) {
+        const p = scamPresets.tarefas;
+        score = p.risk; scamType = p.type; desc = p.desc; redFlags = p.redFlags; actions = p.actions;
+      } else if (lower.includes('pix') || lower.includes('urgente') || lower.includes('clique') || lower.includes('http')) {
+        score = 85;
+        scamType = "Mensagem com Forte Risco de Engenharia Social";
+        desc = "A mensagem contém gatilhos de urgência, solicitação de pagamento ou links suspeitos comumente utilizados em tentativas de golpe no WhatsApp.";
+        redFlags = [
+          "Presença de link externo ou chave PIX não verificada",
+          "Linguagem apelativa com gatilho de pressa ou urgência",
+          "Solicitação de ação rápida sem tempo para pensar"
+        ];
+        actions = [
+          "NÃO envie dinheiro e não clique no link",
+          "Ligue para o remetente oficial por outro canal",
+          "Compartilhe o alerta com seus familiares"
+        ];
+      }
+
+      // Update UI
+      const scoreVal = document.getElementById('score-val');
+      const gaugeCircle = document.getElementById('gauge-circle');
+      const badge = document.getElementById('verdict-badge');
+      const title = document.getElementById('verdict-title');
+      const descEl = document.getElementById('verdict-desc');
+      const redList = document.getElementById('red-flags-list');
+      const actList = document.getElementById('actions-list');
+
+      scoreVal.innerText = score + '%';
+      title.innerText = scamType;
+      descEl.innerText = desc;
+
+      if (score >= 80) {
+        gaugeCircle.style.background = `conic-gradient(#ef4444 0% ${score}%, rgba(255,255,255,0.05) ${score}% 100%)`;
+        scoreVal.style.color = '#ef4444';
+        badge.className = 'verdict-badge badge-red';
+        badge.innerText = '🚨 ALTO RISCO DE GOLPE CONFIRMADO';
+      } else {
+        gaugeCircle.style.background = `conic-gradient(#10b981 0% ${score}%, rgba(255,255,255,0.05) ${score}% 100%)`;
+        scoreVal.style.color = '#10b981';
+        badge.className = 'verdict-badge badge-green';
+        badge.innerText = '✅ BAIXO RISCO IDENTIFICADO';
+      }
+
+      redList.innerHTML = redFlags.map(f => `<li>🚩 ${f}</li>`).join('');
+      actList.innerHTML = actions.map(a => `<li>✓ ${a}</li>`).join('');
+
+      // WhatsApp Share Link
+      const shareText = encodeURIComponent(
+        `🚨 CUIDADO COM GOLPE! Acabei de consultar esta mensagem no GolpeHero e a IA detectou ${score}% de risco (${scamType}). Não faça PIX nem clique no link! Teste grátis você também: https://taylormatematica-beep.github.io/repoguard/golpehero/`
+      );
+      document.getElementById('whatsapp-share-btn').href = `https://api.whatsapp.com/send?text=${shareText}`;
+    }
+
+    // Auto-load preset on start
+    loadScamPreset('filho', document.querySelector('.btn-preset'));
+  </script>
+</body>
+</html>
