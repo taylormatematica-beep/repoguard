@@ -1,0 +1,49 @@
+name: Publish RepoGuard to npm
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-repoguard-npm
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js and npm registry
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+
+      - name: Install npm with OIDC trusted publishing support
+        run: npm install --global npm@11
+
+      - name: Verify package and lockfile version
+        run: |
+          node -e "const p=require('./package.json'); if (p.name !== 'repoguard-rules' || p.version !== '1.7.0') process.exit(1)"
+          node -e "if (require('./package-lock.json').version !== '1.7.0') process.exit(1)"
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Run test suite
+        run: npm test
+
+      - name: Inspect publish tarball
+        run: npm pack --dry-run
+
+      - name: Publish repoguard-rules@1.7.0 via npm trusted publisher
+        run: npm publish --access public
