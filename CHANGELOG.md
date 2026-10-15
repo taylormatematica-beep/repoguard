@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.7.0] - 2026-10-14
+### 🦀 Added
+- **Rust Clean Architecture & Panic Safety Engine:**
+  - `RULE-RS-01`: Flags unsafe `.unwrap()` and `.expect()` calls in production Rust logic that cause thread panics and process crashes (exempts unit test modules and `#[cfg(test)]`).
+  - `RULE-RS-02`: Enforces Clean Architecture in Rust HTTP handlers (Axum, Actix-web, Rocket), prohibiting direct SQLx (`sqlx::query!`, `sqlx::query_as!`) and Diesel operations inside routes.
+  - Added Rust stack detection (`Cargo.toml`) in `npx repoguard init` generating specialized `.cursorrules`, `CLAUDE.md`, and `.windsurfrules`.
+- **Secret Leak Engine 2.0:**
+  - `RULE-SEC-01`: Signature-based detection of AI/cloud provider tokens (OpenAI `sk-proj-`, Anthropic `sk-ant-`, GitHub `ghp_` / `github_pat_`, AWS `AKIA...`, Stripe `sk_live_` / `sk_test_`) and credential-bearing database URLs (Postgres, MySQL, MongoDB, Redis).
+  - `RULE-SEC-02`: Detects private cryptographic key file headers (`-----BEGIN RSA/EC/PGP PRIVATE KEY-----`).
+  - Full repository audits now include supported configuration and key files (`.env`, `.env.*`, `.json`, `.yaml`, `.toml`, `.pem`, `.key`).
+- **Model Context Protocol (MCP) Server 2.0 (Full 3-Pillar Standard):**
+  - **Tools**: Added real-time git diff auditing (`repoguard_diff`) alongside `repoguard_audit`, `repoguard_get_rules`, and `repoguard_fix`.
+  - **Resources**: Full `resources/list` and `resources/read` support exposing `repoguard://rules` (JSON rules catalog) and `repoguard://health` (live project health scorecard).
+  - **Prompts**: Full `prompts/list` and `prompts/get` support featuring `architectural_review` and `clean_architecture_refactor` templates for Claude Desktop and Cursor.
+  - Advertises Tools, Resources, and Prompts over the MCP protocol version `2024-11-05`; external Glama evaluation remains separate.
+- **Rule Engine Expansion:**
+  - Active architectural guardrails increased from 12 to 16 comprehensive rules across TypeScript, JavaScript, Python, Golang, Rust, and Security.
+
+---
+
 ## [1.6.1] - 2026-10-04
 ### 🤖 Added
 - **Native Model Context Protocol (MCP) Server:**

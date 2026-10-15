@@ -1,13 +1,13 @@
 /**
  * RepoGuard Architecture & Diff Analyzer Engine
- * Comprehensive Multi-Language Rule Engine (TypeScript, Python, Go)
- * Version 1.6.0
+ * Comprehensive Multi-Language Rule Engine (TypeScript, Python, Go, Rust, Cloud Security)
+ * Version 1.7.0
  */
 
 const fs = require('fs');
 const path = require('path');
 
-// Complete Architectural Guardrails (TypeScript, Python, Golang, Security)
+// Complete Architectural Guardrails (16 Rules across TS, Py, Go, Rust & Security)
 const ARCHITECTURAL_RULES = [
   {
     id: 'RULE-01',
@@ -50,14 +50,54 @@ const ARCHITECTURAL_RULES = [
     suggestion: () => `if err != nil { return err }`
   },
   {
+    id: 'RULE-RS-01',
+    name: 'Rust Panic Risk / Unsafe .unwrap() or .expect() in Production',
+    severity: 'warning',
+    category: 'Error Handling',
+    filePattern: /\.rs$/i,
+    pattern: /\.(unwrap|expect)\s*\(/,
+    message: 'Unsafe .unwrap() or .expect() in production Rust code. AI models frequently silence errors with .unwrap(), leading to runtime panics and thread crashes. Handle errors explicitly using ?, match, unwrap_or, or unwrap_or_default().',
+    suggestion: () => `let value = result?;`
+  },
+  {
+    id: 'RULE-RS-02',
+    name: 'Rust Clean Architecture / No Raw DB Queries in Route Handlers',
+    severity: 'warning',
+    category: 'Architecture',
+    filePattern: /\.rs$/i,
+    pattern: /\b(sqlx::(query|query_as|query_scalar)|diesel::(insert_into|update|delete)|pool\.(acquire|begin))\b/,
+    message: 'Direct database/ORM access detected inside a Rust route handler (Axum/Actix-web/Rocket). Decouple persistence logic into a dedicated repository or service layer.',
+    suggestion: () => `let users = user_service::get_active_users(&pool).await?;`
+  },
+  {
     id: 'RULE-02',
     name: 'Hardcoded Secret / Credential Leak',
     severity: 'critical',
     category: 'Security',
-    filePattern: /\.(ts|tsx|js|jsx|py|go|env|json)$/i,
+    filePattern: /\.(ts|tsx|js|jsx|py|go|rs|env|json)$/i,
     pattern: /(api_key|secret|password|bearer|auth_token|private_key)\s*[:=]\s*["'][A-Za-z0-9_\-\.]{16,}["']/i,
-    message: 'Potential hardcoded secret or API credential detected. Secrets must be injected via environment variables (`process.env.*` or `os.Getenv()`).',
+    message: 'Potential hardcoded secret or API credential detected. Secrets must be injected via environment variables (`process.env.*` or `std::env::var()`).',
     suggestion: () => `const secret = process.env.API_SECRET_KEY;`
+  },
+  {
+    id: 'RULE-SEC-01',
+    name: 'Live AI, Cloud & Database Credential Leak',
+    severity: 'critical',
+    category: 'Security',
+    filePattern: /(?:\.(?:ts|tsx|js|jsx|py|go|rs|env|json|ya?ml|toml|pem|key)|\.env\.[\w.-]+)$/i,
+    pattern: /(?:\b(?:sk-(?:proj-)?[A-Za-z0-9_-]{20,}|sk-ant-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{40,}|AKIA[0-9A-Z]{16}|(?:sk|rk)_(?:live|test)_[0-9a-zA-Z]{24,})\b|(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|redis|rediss):\/\/[A-Za-z0-9._%-]+:[^\/\s"'`@${}]{8,}@[A-Za-z0-9._-]+(?::\d{2,5})?(?:\/[^\s"'`]*)?)/i,
+    message: 'Live AI/cloud token or database connection URI with embedded credentials detected. Revoke or rotate exposed credentials immediately and load them from a secret manager or environment variable.',
+    suggestion: () => `const apiKey = process.env.PROVIDER_API_KEY;`
+  },
+  {
+    id: 'RULE-SEC-02',
+    name: 'Embedded Private Cryptographic Key Header',
+    severity: 'critical',
+    category: 'Security',
+    filePattern: /(?:\.(?:ts|tsx|js|jsx|py|go|rs|env|pem|key)|\.env\.[\w.-]+)$/i,
+    pattern: /-----BEGIN\s+(RSA|EC|PGP|OPENSSH|ENCRYPTED|DSA)?\s*PRIVATE\s+KEY-----/i,
+    message: 'Unencrypted private cryptographic key file header detected in source code. Store private keys in a secure secret manager or KMS, never in source repositories.',
+    suggestion: () => `const privateKey = process.env.PRIVATE_KEY_PEM;`
   },
   {
     id: 'RULE-09',
@@ -104,7 +144,7 @@ const ARCHITECTURAL_RULES = [
     name: 'SQL Injection Vulnerability',
     severity: 'critical',
     category: 'Security',
-    filePattern: /\.(ts|tsx|js|jsx|py|go)$/i,
+    filePattern: /\.(ts|tsx|js|jsx|py|go|rs)$/i,
     pattern: /(\$queryRawUnsafe|query\(|execute\(|db\.Raw\()\s*[`"'].*\$\{.*\}.*[`"']/i,
     message: 'Unsafe dynamic string interpolation detected in raw database query. Always use parameterized queries to prevent SQL injection.',
     suggestion: () => `await prisma.$queryRaw\`SELECT * FROM users WHERE id = \${id}\`;`
@@ -212,7 +252,7 @@ function analyzeGolangHandlers(content, filename) {
   let currentLineNumber = 0;
   let isDiff = lines.some(line => /^@@ /.test(line));
 
-  const isHandlerFile = /(handler|handlers|controller|controllers|routes|router)\b/i.test(filename) ||
+  const isHandlerFile = /(handler|handlers|controller|controllers|routes|router)/i.test(filename) ||
                         /(handler|controller)\.go$/i.test(filename);
 
   for (let i = 0; i < lines.length; i++) {
@@ -285,6 +325,113 @@ function analyzeGolangHandlers(content, filename) {
 }
 
 /**
+ * Analyzes Rust code for panic-prone .unwrap() and Clean Architecture route violations (Axum, Actix-web, Rocket)
+ */
+function analyzeRustCode(content, filename) {
+  const violations = [];
+  const lines = content.split('\n');
+
+  const isTestFile = /(^|\/)(tests\/|test_.*\.rs$|.*_test\.rs$)/i.test(filename);
+  let insideTestBlock = false;
+  let seenTestOpenBrace = false;
+  let testBraceCount = 0;
+
+  let insideHandler = false;
+  let seenHandlerOpenBrace = false;
+  let handlerBraceCount = 0;
+
+  let currentLineNumber = 0;
+  let isDiff = lines.some(line => /^@@ /.test(line));
+
+  const isHandlerFile = /(handler|handlers|routes|router|controller|controllers)/i.test(filename) ||
+                        /(handler|controller)\.rs$/i.test(filename);
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (isDiff && line.startsWith('@@ ')) {
+      const match = line.match(/^\@\@ -\d+(?:,\d+)? \+(\d+)/);
+      if (match) currentLineNumber = Number(match[1]) - 1;
+      continue;
+    }
+    if (line.startsWith('-') && !line.startsWith('---')) continue;
+
+    const cleanLine = line.startsWith('+') ? line.slice(1) : line;
+    if (isDiff) currentLineNumber++;
+    const trimmed = cleanLine.trim();
+
+    // Detect unit test module or #[test] attribute
+    if (/#\[cfg\(test\)\]|#\[test\]|mod\s+tests\s*\{/i.test(trimmed)) {
+      insideTestBlock = true;
+      seenTestOpenBrace = cleanLine.includes('{');
+      testBraceCount = (cleanLine.match(/{/g) || []).length - (cleanLine.match(/}/g) || []).length;
+    } else if (insideTestBlock) {
+      if (cleanLine.includes('{')) seenTestOpenBrace = true;
+      testBraceCount += (cleanLine.match(/{/g) || []).length - (cleanLine.match(/}/g) || []).length;
+      if (seenTestOpenBrace && testBraceCount <= 0) {
+        insideTestBlock = false;
+        seenTestOpenBrace = false;
+      }
+    }
+
+    // RULE-RS-01: .unwrap() or .expect() in production code
+    if (!isTestFile && !insideTestBlock) {
+      if (/\.(unwrap|expect)\s*\(/.test(trimmed) && !trimmed.startsWith('//') && !trimmed.startsWith('/*')) {
+        violations.push({
+          ruleId: 'RULE-RS-01',
+          ruleName: 'Rust Panic Risk / Unsafe .unwrap() or .expect() in Production',
+          severity: 'warning',
+          category: 'Error Handling',
+          filename: filename,
+          lineNumber: isDiff ? currentLineNumber : i + 1,
+          codeSnippet: trimmed,
+          message: 'Unsafe .unwrap() or .expect() in production Rust code. AI models frequently silence errors with .unwrap(), leading to runtime panics and thread crashes. Handle errors explicitly using ?, match, unwrap_or, or unwrap_or_default().',
+          suggestion: 'let value = result?;'
+        });
+      }
+    }
+
+    // Detect HTTP route handler in Axum, Actix-web, or Rocket
+    const isRouteDecorator = /#\[(get|post|put|delete|patch|route)\s*\(/i.test(trimmed);
+    const isHandlerSig = /(pub\s+)?(async\s+)?fn\s+\w+/i.test(trimmed);
+
+    if (isRouteDecorator || (isHandlerFile && isHandlerSig)) {
+      insideHandler = true;
+      seenHandlerOpenBrace = cleanLine.includes('{');
+      handlerBraceCount = (cleanLine.match(/{/g) || []).length - (cleanLine.match(/}/g) || []).length;
+      continue;
+    }
+
+    if (insideHandler) {
+      if (cleanLine.includes('{')) seenHandlerOpenBrace = true;
+      handlerBraceCount += (cleanLine.match(/{/g) || []).length - (cleanLine.match(/}/g) || []).length;
+
+      // RULE-RS-02: Direct database operations inside Rust route handlers
+      const dbOp = /\b(sqlx::(query|query_as|query_scalar)|diesel::(insert_into|update|delete)|pool\.(acquire|begin))\b/i;
+      if (dbOp.test(trimmed)) {
+        violations.push({
+          ruleId: 'RULE-RS-02',
+          ruleName: 'Rust Clean Architecture / No Raw DB Queries in Route Handlers',
+          severity: 'warning',
+          category: 'Architecture',
+          filename: filename,
+          lineNumber: isDiff ? currentLineNumber : i + 1,
+          codeSnippet: trimmed,
+          message: 'Direct database/ORM access detected inside a Rust route handler (Axum/Actix-web/Rocket). Decouple persistence logic into a dedicated repository or service layer.',
+          suggestion: 'let users = user_service::get_active_users(&pool).await?;'
+        });
+      }
+
+      if (seenHandlerOpenBrace && handlerBraceCount <= 0) {
+        insideHandler = false;
+        seenHandlerOpenBrace = false;
+      }
+    }
+  }
+
+  return violations;
+}
+
+/**
  * Analyzes a diff or raw file content against architectural guardrails
  */
 function analyzeDiff(diffContent, filename) {
@@ -294,20 +441,30 @@ function analyzeDiff(diffContent, filename) {
     violations.push(...analyzePythonFastAPIRoutes(diffContent, filename));
   } else if (/\.go$/i.test(filename)) {
     violations.push(...analyzeGolangHandlers(diffContent, filename));
+  } else if (/\.rs$/i.test(filename)) {
+    violations.push(...analyzeRustCode(diffContent, filename));
   }
 
   const lines = diffContent.split('\n');
+  const isDiff = lines.some(line => line.startsWith('diff --git ') || /^@@ -\d/.test(line));
   let currentLineNumber = 0;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    if (line.startsWith('+') || !line.startsWith('-')) {
+    // A raw PEM file begins with '-----BEGIN'; only skip removed lines in an actual git diff.
+    if (!isDiff || !line.startsWith('-')) {
       currentLineNumber++;
       const cleanLine = line.replace(/^\+/, '');
 
       for (const rule of ARCHITECTURAL_RULES) {
-        if (rule.id === 'RULE-PY-01' || rule.id === 'RULE-GO-01' || rule.id === 'RULE-GO-02') {
+        if (
+          rule.id === 'RULE-PY-01' ||
+          rule.id === 'RULE-GO-01' ||
+          rule.id === 'RULE-GO-02' ||
+          rule.id === 'RULE-RS-01' ||
+          rule.id === 'RULE-RS-02'
+        ) {
           continue;
         }
         if (rule.filePattern.test(filename) && rule.pattern.test(cleanLine)) {
@@ -336,7 +493,8 @@ function analyzeDiff(diffContent, filename) {
 function loadIgnoreList(rootDir) {
   const defaultIgnores = [
     'node_modules', '.git', 'dist', 'build', '.next', 'coverage',
-    '.turbo', 'venv', '.venv', 'vendor', '__pycache__', 'test/fixtures'
+    '.turbo', 'venv', '.venv', 'vendor', '__pycache__', 'test', 'tests', '__tests__', 'test/fixtures',
+    'target', 'Cargo.lock'
   ];
 
   const ignoreFile = path.join(rootDir, '.repoguardignore');
@@ -357,7 +515,7 @@ function loadIgnoreList(rootDir) {
 /**
  * Recursively scans all codebase files in a directory
  */
-function scanDirectory(dir, extensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.go'], rootDir = dir) {
+function scanDirectory(dir, extensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.go', '.rs', '.json', '.yaml', '.yml', '.toml', '.env', '.pem', '.key'], rootDir = dir) {
   const ignoreDirs = loadIgnoreList(rootDir);
   let files = [];
 
@@ -376,7 +534,7 @@ function scanDirectory(dir, extensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '
     const stat = fs.statSync(fullPath);
     if (stat.isDirectory()) {
       files = files.concat(scanDirectory(fullPath, extensions, rootDir));
-    } else if (extensions.some(ext => item.endsWith(ext))) {
+    } else if (extensions.some(ext => item.endsWith(ext)) || item.startsWith('.env.')) {
       files.push(fullPath);
     }
   }
@@ -425,7 +583,8 @@ function formatGitHubComment(violations) {
     comment += `- **File:** \`${v.filename}:${v.lineNumber}\`\n`;
     comment += `- **Category:** \`${v.category}\`\n`;
     comment += `- **Violation:** ${v.message}\n`;
-    comment += `\`\`\`${v.filename.endsWith('.go') ? 'go' : v.filename.endsWith('.py') ? 'python' : 'typescript'}\n// Problematic code:\n${v.codeSnippet}\n\`\`\`\n\n`;
+    const lang = v.filename.endsWith('.rs') ? 'rust' : v.filename.endsWith('.go') ? 'go' : v.filename.endsWith('.py') ? 'python' : 'typescript';
+    comment += `\`\`\`${lang}\n// Problematic code:\n${v.codeSnippet}\n\`\`\`\n\n`;
     if (v.suggestion) {
       comment += `> 💡 **Architectural Suggestion:**\n> \`${v.suggestion}\`\n\n`;
     }
@@ -447,7 +606,7 @@ function formatSARIF(violations) {
         tool: {
           driver: {
             name: "RepoGuard",
-            version: "1.6.0",
+            version: "1.7.0",
             informationUri: "https://taylormatematica-beep.github.io/repoguard/",
             rules: ARCHITECTURAL_RULES.map(r => ({
               id: r.id,
@@ -486,7 +645,7 @@ function formatSARIF(violations) {
 function formatJSON(violations, healthScore, totalFiles) {
   return JSON.stringify({
     tool: "RepoGuard",
-    version: "1.6.0",
+    version: "1.7.0",
     totalFiles,
     healthScore: healthScore.score,
     grade: healthScore.grade,
@@ -498,6 +657,7 @@ function formatJSON(violations, healthScore, totalFiles) {
 module.exports = {
   analyzeDiff,
   analyzeGolangHandlers,
+  analyzeRustCode,
   scanDirectory,
   calculateHealthScore,
   formatGitHubComment,

@@ -1,7 +1,7 @@
 {
   "name": "repoguard-rules",
-  "version": "1.6.1",
-  "description": "The Architecture Guardian for AI-assisted codebases. Enforces clean layers, generates .cursorrules & CLAUDE.md for TypeScript, Python and Golang, and audits PRs in real-time.",
+  "version": "1.7.0",
+  "description": "The Architecture Guardian for AI-assisted codebases. Enforces clean layers, generates .cursorrules & CLAUDE.md for TypeScript, Python, Golang and Rust, and runs standalone MCP Server (Tools, Resources, Prompts).",
   "main": "bin/repoguard.js",
   "bin": {
     "repoguard-cli": "bin/repoguard.js",
@@ -10,9 +10,12 @@
   "scripts": {
     "build": "echo \"RepoGuard build ready\"",
     "start": "node bin/mcp.js",
-    "test": "node test/python-fastapi.test.js && node test/golang.test.js && node bin/repoguard.js audit",
+    "test": "node test/python-fastapi.test.js && node test/golang.test.js && node test/rust.test.js && node test/secrets.test.js && node test/mcp.test.js && node bin/repoguard.js audit",
     "test:python-fastapi": "node test/python-fastapi.test.js",
-    "test:golang": "node test/golang.test.js"
+    "test:golang": "node test/golang.test.js",
+    "test:rust": "node test/rust.test.js",
+    "test:secrets": "node test/secrets.test.js",
+    "test:mcp": "node test/mcp.test.js"
   },
   "repository": {
     "type": "git",
@@ -21,13 +24,17 @@
   "keywords": [
     "cursorrules",
     "claude",
+    "claude-code",
     "windsurf",
     "copilot",
     "ai",
+    "mcp",
+    "model-context-protocol",
     "architecture",
     "linter",
     "devtools",
     "guardrails",
+    "rust",
     "golang",
     "python",
     "fastapi",
