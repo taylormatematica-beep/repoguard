@@ -27,7 +27,7 @@
   <a href="https://taylormatematica-beep.github.io/repoguard/"><img src="https://img.shields.io/badge/playground-live%20demo-00f2fe?style=flat-square" alt="Live Playground"></a>
 </p>
 
-> **New in v1.7.1:** Safe Init preserves existing configuration, previews changes, makes CI generation opt-in, and never adds a README badge without your choice.
+> **v1.7.1:** `init` is temporarily unavailable while its filesystem safety is being redesigned. Other commands remain available.
 >
 > **New in v1.7.0:** Rust panic safety, expanded secret detection, and MCP Tools + Resources + Prompts.
 
@@ -44,42 +44,21 @@ AI coding assistants (**Cursor, GitHub Copilot, Claude Code, Windsurf**) write 3
 3. **Escape Type Safety & Error Handling:** Scatter `: any` in TypeScript, discard errors with `_ = err` in Go, or use panic-prone `.unwrap()` in Rust production code.
 4. **Leak Sensitive Secrets:** Hardcode AI/cloud provider tokens, embed database credentials in connection URLs, or expose secrets with the `NEXT_PUBLIC_` prefix.
 
-RepoGuard acts as an automated architecture supervisor: it generates strict, customized `.cursorrules`, `CLAUDE.md`, and `.windsurfrules` context files, verifies pre-commit diffs in ~12ms, runs an MCP server with Tools, Resources, and Prompts, and can audit Pull Requests when you enable its CI workflow.
+RepoGuard acts as an automated architecture supervisor: it analyzes code and diffs, runs an MCP server with Tools, Resources, and Prompts, and can audit Pull Requests with a manually configured workflow. Context-file generation is temporarily unavailable in v1.7.1.
 
 ---
 
 ## 🚀 Quickstart
 
-Preview changes, then initialize a repository (zero installation required):
+Audit a repository (zero installation required):
 
 ```bash
-npx repoguard-rules init --dry-run
-npx repoguard-rules init
+npx repoguard-rules audit
 ```
 
-**Safe Init (v1.7.1):** `init` creates only four missing AI context files: `.cursorrules`, `CLAUDE.md`, `.windsurfrules`, and `.github/copilot-instructions.md`. Existing files and symlinks are preserved. It never edits your `README.md`; the optional badge is printed for you to copy manually. Repeating `init` does not change files already created.
+**`init` is temporarily unavailable in v1.7.1**, including `--dry-run`, `--force`, and `--with-ci`. It exits with an error before scanning or changing project files. It does not generate context files or a CI workflow. Safe initialization will be addressed separately.
 
-**CI is opt-in.** By default, `init` does not create, inspect, or replace `.github/workflows/repoguard.yml` (even with `--force`). To include that workflow, first preview it with `npx repoguard-rules init --with-ci --dry-run`, then run `npx repoguard-rules init --with-ci`. Review the generated workflow before committing it: it pins `actions/checkout` and `actions/setup-node` to immutable commits, installs the exact `repoguard-rules@1.7.1` package outside the PR checkout with lifecycle scripts disabled, and grants `contents: read` and `pull-requests: write` for PR comments. The token is available only to the review step. **The opt-in workflow requires `repoguard-rules@1.7.1` to be published to npm before its first run**; do not enable it early. It no longer uses the v1.7.0 RepoGuard Action, which could repeat source excerpts in comments. On forked PRs, GitHub may restrict the token to read-only, so comments might not be posted.
-
-If you **intentionally** want to regenerate RepoGuard files, use `npx repoguard-rules init --force`; add `--with-ci` if you also want to regenerate CI. Each selected existing regular file is copied to a unique adjacent `.repoguard-backup-<timestamp>` file *before* replacement. Symlink targets are never overwritten. Review and remove backups when appropriate; avoid committing them accidentally.
-
-**Windows ACL note:** NTFS permissions are not represented by POSIX mode bits. If files have custom access-control lists, the backup and `--force` replacement might not retain the same ACLs; review permissions manually or leave existing files untouched (the default). Strict `0600` mode preservation is validated on POSIX, not Windows.
-
-Or install globally:
-
-```bash
-npm install -g repoguard-rules
-repoguard init
-```
-
-### What happens in 2 seconds:
-- 🔍 **Auto-detects your tech stack** (Next.js, NestJS, Express, FastAPI, Django, Gin, Fiber, Axum, Actix-web, Prisma, GORM, SQLx, Diesel, etc.).
-- 🔐 **Audits code and supported config files** (`.env`, `.env.*`, `.json`, `.yaml`, `.toml`, `.pem`, `.key`) for provider tokens and embedded database credentials.
-- 📝 **Generates tailored `.cursorrules`** (for Cursor AI).
-- 🤖 **Generates a comprehensive `CLAUDE.md`** (for Claude Code).
-- 🌊 **Generates `.windsurfrules`** (for Windsurf IDE).
-- 🛡️ **Generates `.github/copilot-instructions.md`** (for GitHub Copilot).
-- ⚙️ **Leaves hooks and CI untouched by default**; install hooks with `repoguard hook install` or opt in to a CI workflow with `repoguard init --with-ci`.
+You can also install globally with `npm install -g repoguard-rules`, then run `repoguard audit`. Review results locally. Hook installation is a separate command and modifies the repository.
 
 ---
 
@@ -132,11 +111,7 @@ RepoGuard ships with a built-in, zero-dependency **MCP Server** implementing the
 
 | Command | Description |
 | :--- | :--- |
-| `npx repoguard-rules init` | Generates missing AI context files; leaves CI and README untouched. |
-| `npx repoguard-rules init --dry-run` | Previews AI context file operations; writes nothing. |
-| `npx repoguard-rules init --with-ci` | Explicitly includes the GitHub Actions workflow; preserves it if already present. |
-| `npx repoguard-rules init --with-ci --dry-run` | Previews AI and CI operations without writing anything. |
-| `npx repoguard-rules init --force` | Backs up and replaces selected AI context files; add `--with-ci` to include CI. |
+| `npx repoguard-rules init` | Temporarily unavailable, including all options. |
 | `npx repoguard-rules audit` | Evaluates entire codebase and returns an **Architectural Health Score (A+ to F)**. |
 | `npx repoguard-rules audit --format=sarif` | Generates standard OASIS SARIF v2.1.0 for **GitHub Code Scanning** integration. |
 | `npx repoguard-rules audit --format=json` | Outputs machine-readable JSON for custom CI/CD pipelines. |
@@ -189,7 +164,7 @@ test/fixtures/
 
 ## 🤖 GitHub Action & Security Integration
 
-RepoGuard dogfoods its own architecture on every push. For a new project, prefer the opt-in workflow generated by `init --with-ci` **after v1.7.1 is published**. Do not use the v1.7.0 Action for PR comments containing sensitive code. The example below is this repository's own CI job, not the generated PR-comment workflow:
+RepoGuard dogfoods its own architecture on every push. Workflow generation via `init` is unavailable in v1.7.1. Do not use the v1.7.0 Action for PR comments containing sensitive code. The example below is this repository's own CI job:
 
 ```yaml
 # .github/workflows/ci.yml

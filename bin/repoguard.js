@@ -20,7 +20,6 @@ const {
   ARCHITECTURAL_RULES
 } = require('./analyzer');
 const { runGitHubActionPRReview, generatePRReviewMarkdown } = require('./commenter');
-const { applyGeneratedFiles } = require('./safe-init');
 
 // ANSI Colors for Terminal Output
 const colors = {
@@ -417,85 +416,9 @@ if (!isJsonFormat && !isSarifFormat) {
 const targetDir = process.cwd();
 
 if (command === 'init') {
-  const supportedOptions = new Set(['--force', '--dry-run', '--with-ci', '--help']);
-  const unknownOptions = args.slice(1).filter(option => !supportedOptions.has(option));
-  if (unknownOptions.length > 0) {
-    console.error(`Unknown init option(s): ${unknownOptions.join(', ')}. Use --help for available options.`);
-    process.exitCode = 2;
-    return;
-  }
-  if (args.includes('--help')) {
-    console.log(`Usage: npx repoguard-rules init [--dry-run] [--force] [--with-ci]
-  Default: create missing AI context files; preserve existing files and README.md; leave CI untouched.
-  --dry-run: preview actions without changing the project.
-  --force: back up and replace selected existing generated files (never follows symlinks).
-  --with-ci: include the CI workflow (requires repoguard-rules@1.7.1 on npm to run).`);
-    return;
-  }
-
-  const dryRun = args.includes('--dry-run');
-  const force = args.includes('--force');
-  const withCi = args.includes('--with-ci');
-  console.log(`${colors.cyan}🔍 Scanning repository architecture...${colors.reset}`);
-
-  const stack = detectProjectStack(targetDir);
-  console.log(`  ${colors.green}✓${colors.reset} Framework: ${colors.bright}${stack.framework}${colors.reset}`);
-  console.log(`  ${colors.green}✓${colors.reset} Language:  ${colors.bright}${stack.language}${colors.reset}`);
-  console.log(`  ${colors.green}✓${colors.reset} ORM/Data: ${colors.bright}${stack.orm}${colors.reset}`);
-  console.log(`  ${colors.green}✓${colors.reset} Directory: ${colors.bright}${stack.srcDir}/${colors.reset}\n`);
-
-  const generated = [
-    { relativePath: '.cursorrules', content: generateCursorRules(stack) },
-    { relativePath: 'CLAUDE.md', content: generateClaudeMd(stack) },
-    { relativePath: '.windsurfrules', content: generateWindsurfRules(stack) },
-    { relativePath: '.github/copilot-instructions.md', content: generateCopilotInstructions(stack) }
-  ];
-  if (withCi) {
-    generated.push({ relativePath: '.github/workflows/repoguard.yml', content: generateGitHubAction() });
-  }
-
-  let results;
-  try {
-    results = applyGeneratedFiles(targetDir, generated, { force, dryRun });
-  } catch (error) {
-    console.error(`${colors.red}Safe Init stopped: ${error.message}${colors.reset}`);
-    process.exitCode = 1;
-    return;
-  }
-
-  const labels = {
-    created: 'Created',
-    skipped: 'Preserved existing',
-    replaced: 'Replaced',
-    'would-create': 'Would create',
-    'would-skip': 'Would preserve existing',
-    'would-replace': 'Would back up and replace'
-  };
-  for (const result of results) {
-    const note = result.symlink ? ' (symlink left untouched)' : '';
-    console.log(`  ${labels[result.action]}: ${result.relativePath}${note}`);
-    if (result.backupPath) console.log(`  Backup saved: ${result.backupPath}`);
-  }
-
-  if (dryRun) {
-    console.log(`\n${colors.cyan}Dry run complete. No files or directories were changed.${colors.reset}\n`);
-  } else {
-    const count = action => results.filter(result => result.action === action).length;
-    console.log(`\n${colors.green}Safe Init complete: ${count('created')} created, ${count('skipped')} preserved, ${count('replaced')} replaced.${colors.reset}\n`);
-  }
-  if (!withCi) {
-    console.log(`${colors.dim}CI workflow untouched. Pass --with-ci to include it explicitly.${colors.reset}\n`);
-  }
-
-  const badgeMd = `[![Architecture: Guarded by RepoGuard](https://img.shields.io/badge/Architecture-Guarded%20by%20RepoGuard-00f2fe?style=flat-square)](https://github.com/taylormatematica-beep/repoguard)`;
-  console.log(`${colors.dim}Optional README badge (copy it yourself if you want to use it):${colors.reset}`);
-  console.log(`${colors.cyan}${badgeMd}${colors.reset}\n`);
-
-  console.log(`${colors.dim}─────────────────────────────────────────────────────────────────────────────${colors.reset}`);
-  console.log(`💡 ${colors.bright}Need automated PR review bots & team CI enforcement?${colors.reset}`);
-  console.log(`   Upgrade to RepoGuard Pro ($12/mo): ${colors.cyan}https://taylormatematica-beep.github.io/repoguard/#pricing${colors.reset}`);
-  console.log(`${colors.dim}─────────────────────────────────────────────────────────────────────────────${colors.reset}\n`);
-
+  console.error('RepoGuard init is temporarily unavailable in v1.7.1. No project files were scanned or changed by init.');
+  process.exitCode = 1;
+  return;
 } else if (command === 'audit') {
   const startTime = Date.now();
   const files = scanDirectory(targetDir);
@@ -669,7 +592,7 @@ if (command === 'init') {
 
 } else {
   console.log(`Usage:
-  ${colors.bright}npx repoguard-rules init [--dry-run] [--force] [--with-ci]${colors.reset}  Safely create AI context files; CI opt-in, preview or back up and replace
+  ${colors.bright}npx repoguard-rules init${colors.reset}  Temporarily unavailable in v1.7.1
   ${colors.bright}npx repoguard-rules audit${colors.reset}                 Full codebase scan with Architectural Health Score (A+ to F)
   ${colors.bright}npx repoguard-rules audit --format=sarif${colors.reset}  Export SARIF v2.1.0 report for GitHub Code Scanning
   ${colors.bright}npx repoguard-rules audit --format=json${colors.reset}   Export machine-readable JSON for custom CI/CD pipelines

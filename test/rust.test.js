@@ -1,8 +1,6 @@
 const assert = require('assert');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
-const { spawnSync } = require('child_process');
 
 const { analyzeDiff } = require('../bin/analyzer');
 
@@ -56,24 +54,5 @@ const rs01Diff = diffViolations.filter(v => v.ruleId === 'RULE-RS-01');
 const rs02Diff = diffViolations.filter(v => v.ruleId === 'RULE-RS-02');
 assert(rs01Diff.length >= 1, 'Git diff should detect .unwrap() on line added');
 assert(rs02Diff.length >= 1, 'Git diff should detect sqlx::query! in handler on line added');
-
-// Test 6: Cargo project initialization generates Rust-specific guidance in all AI context files.
-const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'repoguard-rust-init-'));
-try {
-  fs.writeFileSync(path.join(tempDir, 'Cargo.toml'), '[package]\nname = "demo"\nversion = "0.1.0"\n[dependencies]\naxum = "0.7"\nsqlx = "0.7"\n');
-  const result = spawnSync(process.execPath, [path.join(__dirname, '..', 'bin', 'repoguard.js'), 'init'], {
-    cwd: tempDir,
-    encoding: 'utf8'
-  });
-  assert.strictEqual(result.status, 0, result.stderr || 'Rust init should succeed');
-  assert(result.stdout.includes('Language:') && result.stdout.includes('Rust'));
-  for (const file of ['.cursorrules', 'CLAUDE.md', '.windsurfrules']) {
-    const content = fs.readFileSync(path.join(tempDir, file), 'utf8');
-    assert(content.includes('RULE-RS-01'), `${file} should explain Rust panic safety`);
-    assert(content.includes('RULE-RS-02'), `${file} should explain Rust layer separation`);
-  }
-} finally {
-  fs.rmSync(tempDir, { recursive: true, force: true });
-}
 
 console.log('✅ All Rust Clean Architecture & Panic Safety rule tests passed successfully!');

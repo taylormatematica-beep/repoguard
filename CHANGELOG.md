@@ -8,23 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [1.7.1] - Unreleased
-### 🛡️ Fixed
-- `init` preserves existing AI configuration and GitHub Action files instead of silently overwriting them; repeated runs are safe.
-- `init` no longer inserts a marketing badge into `README.md`. It prints an optional badge for manual use instead.
-- `init --force` backs up each selected existing regular file before replacing it, and refuses to follow symlinks or write through symlinked directories.
-- Diagnostic outputs no longer copy source excerpts into CLI reports, JSON, PR comments, or MCP health data; all source excerpts are withheld from analyzer findings. MCP prompt templates omit code containing recognizable credential patterns.
-
-### 🔍 Added
-- `init --dry-run` previews selected file operations without creating directories or modifying any files.
-- `init --with-ci` explicitly opts into generating the GitHub Actions workflow; combine with `--dry-run` to preview it or with `--force` to back up and replace an existing workflow.
-- Safe Init regression tests for new repositories, partial setups, repeat runs, backups, permissions, symlinks, CI opt-in, and invalid options.
-- CLI help examples now use the published `repoguard-rules` package name.
-
-### 🔄 Changed
+### Changed
+- `init` is temporarily unavailable, including `--force`, `--dry-run`, and `--with-ci`; it exits with an error before scanning or modifying project files. Context-file and CI workflow generation are deferred.
 - JSON keeps `codeSnippet` for compatibility but returns a fixed withheld-source placeholder. Inspect the reported file and line locally instead of relying on copied source text.
-- Normalize Windows path separators before applying path-scoped rules and reporting filenames. POSIX-only file-mode assertions are not valid for NTFS ACLs; review ACLs manually before using `init --force` on sensitive Windows files.
-- **Migration:** plain `init` (including `init --force`) no longer creates or changes `.github/workflows/repoguard.yml`. Run `init --with-ci` if you relied on the previous automatic CI setup.
-- The opt-in CI workflow pins checkout and Node setup Actions to immutable commits; it installs the exact `repoguard-rules@1.7.1` package outside the PR checkout instead of running the older v1.7.0 RepoGuard Action. It disables lifecycle scripts/persisted checkout credentials, only passes `GITHUB_TOKEN` to the review step, and requests `contents: read` and `pull-requests: write` (no `issues: write`). **Do not run the opt-in workflow before v1.7.1 is published to npm.**
+- Normalize Windows path separators before applying path-scoped rules and reporting filenames.
+
+### Fixed
+- Diagnostic outputs no longer copy source excerpts into CLI reports, JSON, PR comments, or MCP health data; all source excerpts are withheld from analyzer findings. MCP prompt templates omit code containing recognizable credential patterns.
 
 ---
 
