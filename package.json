@@ -10,13 +10,14 @@
   "scripts": {
     "build": "echo \"RepoGuard build ready\"",
     "start": "node bin/mcp.js",
-    "test": "node test/python-fastapi.test.js && node test/golang.test.js && node test/rust.test.js && node test/secrets.test.js && node test/mcp.test.js && node test/safe-init.test.js && node bin/repoguard.js audit",
+    "test": "node test/python-fastapi.test.js && node test/golang.test.js && node test/rust.test.js && node test/secrets.test.js && node test/redaction.test.js && node test/mcp.test.js && node test/safe-init.test.js && node bin/repoguard.js audit",
     "test:python-fastapi": "node test/python-fastapi.test.js",
     "test:golang": "node test/golang.test.js",
     "test:rust": "node test/rust.test.js",
     "test:secrets": "node test/secrets.test.js",
     "test:mcp": "node test/mcp.test.js",
-    "test:safe-init": "node test/safe-init.test.js"
+    "test:safe-init": "node test/safe-init.test.js",
+    "test:redaction": "node test/redaction.test.js"
   },
   "repository": {
     "type": "git",

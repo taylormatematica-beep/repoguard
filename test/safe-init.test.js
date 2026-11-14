@@ -167,7 +167,7 @@ sandbox(root => {
   assert.deepStrictEqual(backups(root, ciFile), []);
 });
 
-// --with-ci creates a commit-pinned, least-privilege workflow only when requested.
+// --with-ci creates a version-pinned, least-privilege workflow only when requested.
 sandbox(root => {
   const readme = '# Keep this README\n';
   write(root, 'README.md', readme);
@@ -179,12 +179,21 @@ sandbox(root => {
 
   const ci = fs.readFileSync(path.join(root, ciFile), 'utf8');
   assert(ci.includes('uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2'));
-  assert(ci.includes('uses: taylormatematica-beep/repoguard@ad7cdf4aebc0184638efece8080ad016624b5487 # v1.7.0'));
+  assert(ci.includes('uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0'));
+  assert(ci.includes("node-version: '20'"));
   assert(ci.includes('persist-credentials: false'));
+  assert(ci.includes('cd "$RUNNER_TEMP"'), 'npm must not read PR checkout .npmrc');
+  assert(ci.includes('--ignore-scripts --no-audit --no-fund --package-lock=false --registry=https://registry.npmjs.org/ repoguard-rules@1.7.1'));
+  assert(ci.includes('run: node "$RUNNER_TEMP/repoguard/node_modules/repoguard-rules/bin/repoguard.js" ci'));
+  assert(!ci.includes('uses: taylormatematica-beep/repoguard@'), 'do not run the vulnerable v1.7.0 Action');
+  assert(!ci.includes('repoguard-rules@latest'));
   assert(ci.includes('  contents: read\n'));
   assert(ci.includes('  pull-requests: write\n'));
   assert(!ci.includes('issues: write'));
-  assert(!ci.includes('repoguard@main'));
+  const install = ci.split('- name: Install RepoGuard v1.7.1')[1].split('- name: Run RepoGuard Architecture Review')[0];
+  assert(!install.includes('GITHUB_TOKEN'), 'install must not have a write-capable token');
+  assert(ci.includes('GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}'));
+  assert.strictEqual(ci.split('GITHUB_TOKEN:').length, 2, 'token only in review step');
   const repeated = run(root, '--with-ci');
   assertSuccess(repeated);
   assert(repeated.stdout.includes('5 preserved'));

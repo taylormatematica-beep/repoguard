@@ -11,6 +11,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const {
   analyzeDiff,
+  publicFinding,
   scanDirectory,
   calculateHealthScore,
   formatGitHubComment,
@@ -365,11 +366,23 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Run RepoGuard Architecture Review
-        uses: taylormatematica-beep/repoguard@ad7cdf4aebc0184638efece8080ad016624b5487 # v1.7.0
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          github_token: \${{ secrets.GITHUB_TOKEN }}
-          strict_mode: true
+          node-version: '20'
+
+      # The older v1.7.0 Action can repeat source excerpts in PR comments.
+      # Use the fixed package; install outside the untrusted PR checkout.
+      # Requires repoguard-rules@1.7.1 to be published before this workflow runs.
+      - name: Install RepoGuard v1.7.1
+        run: |
+          cd "$RUNNER_TEMP"
+          npm install --prefix "$RUNNER_TEMP/repoguard" --no-save --ignore-scripts --no-audit --no-fund --package-lock=false --registry=https://registry.npmjs.org/ repoguard-rules@1.7.1
+
+      - name: Run RepoGuard Architecture Review
+        env:
+          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+        run: node "$RUNNER_TEMP/repoguard/node_modules/repoguard-rules/bin/repoguard.js" ci
 `;
 }
 
@@ -416,7 +429,7 @@ if (command === 'init') {
   Default: create missing AI context files; preserve existing files and README.md; leave CI untouched.
   --dry-run: preview actions without changing the project.
   --force: back up and replace selected existing generated files (never follows symlinks).
-  --with-ci: explicitly include the RepoGuard GitHub Actions workflow.`);
+  --with-ci: include the CI workflow (requires repoguard-rules@1.7.1 on npm to run).`);
     return;
   }
 
@@ -525,11 +538,11 @@ if (command === 'init') {
 
   if (allViolations.length > 0) {
     console.log(`${colors.yellow}Detected Architectural Drift:${colors.reset}\n`);
-    for (const v of allViolations.slice(0, 10)) {
+    for (const v of allViolations.slice(0, 10).map(publicFinding)) {
       const icon = v.severity === 'critical' ? '🚨' : v.severity === 'error' ? '❌' : '⚠️';
       console.log(`  ${icon} ${colors.bright}${v.ruleId}${colors.reset} in ${colors.cyan}${v.filename}:${v.lineNumber}${colors.reset}`);
       console.log(`     ${v.message}`);
-      console.log(`     ${colors.dim}Code: "${v.codeSnippet.substring(0, 70)}"${colors.reset}\n`);
+      console.log(`     ${colors.dim}Source excerpt withheld; inspect the referenced line locally.${colors.reset}\n`);
     }
 
     if (allViolations.length > 10) {
@@ -573,7 +586,7 @@ if (command === 'init') {
       console.log(`${colors.green}✨ Git diff is architecturally clean! Safe to commit.${colors.reset}\n`);
     } else {
       console.log(`${colors.yellow}⚠️  Found ${violations.length} architectural issue(s) in your uncommitted changes:${colors.reset}\n`);
-      for (const v of violations) {
+      for (const v of violations.map(publicFinding)) {
         console.log(`  - [${v.ruleId}] ${v.filename}:${v.lineNumber} -> ${v.message}`);
       }
       console.log(`\n${colors.dim}Fix these issues or run with --ignore-guard to bypass.${colors.reset}\n`);
@@ -640,9 +653,9 @@ if (command === 'init') {
 
   console.log(`${colors.bright}Found ${allViolations.length} item(s) to refactor:${colors.reset}\n`);
 
-  for (const v of allViolations) {
+  for (const v of allViolations.map(publicFinding)) {
     console.log(`${colors.dim}─── [${v.ruleId}] ${v.filename}:${v.lineNumber} ─────────────────────────────${colors.reset}`);
-    console.log(`  ${colors.red}❌ Problematic: ${v.codeSnippet}${colors.reset}`);
+    console.log(`  ${colors.dim}Source excerpt withheld; inspect the referenced line locally.${colors.reset}`);
     if (v.suggestion) {
       console.log(`  ${colors.green}✅ Suggested Fix: ${v.suggestion}${colors.reset}`);
     }

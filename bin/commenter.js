@@ -7,7 +7,7 @@
 const https = require('https');
 const fs = require('fs');
 const { execSync } = require('child_process');
-const { analyzeDiff, calculateHealthScore } = require('./analyzer');
+const { analyzeDiff, calculateHealthScore, publicFinding } = require('./analyzer');
 
 const COMMENT_MARKER = '<!-- repoguard-pr-audit -->';
 
@@ -88,7 +88,8 @@ function generatePRReviewMarkdown(violations, totalFilesAudited) {
 
     // Group by file
     const byFile = {};
-    for (const v of violations) {
+    for (const original of violations) {
+      const v = publicFinding(original);
       if (!byFile[v.filename]) byFile[v.filename] = [];
       byFile[v.filename].push(v);
     }
@@ -101,7 +102,7 @@ function generatePRReviewMarkdown(violations, totalFilesAudited) {
         const icon = v.severity === 'critical' ? '🚨' : v.severity === 'error' ? '❌' : v.severity === 'warning' ? '⚠️' : 'ℹ️';
         md += `#### ${icon} [${v.ruleId}] ${v.ruleName} (Line ${v.lineNumber})\n`;
         md += `> **Rule:** ${v.message}\n\n`;
-        md += `\`\`\`typescript\n// Flagged code:\n${v.codeSnippet}\n\`\`\`\n\n`;
+        md += `> **Source:** Excerpt withheld; inspect the referenced file and line locally.\n\n`;
 
         if (v.suggestion) {
           md += `> 💡 **Recommended Fix:**\n`;

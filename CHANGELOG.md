@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `init` preserves existing AI configuration and GitHub Action files instead of silently overwriting them; repeated runs are safe.
 - `init` no longer inserts a marketing badge into `README.md`. It prints an optional badge for manual use instead.
 - `init --force` backs up each selected existing regular file before replacing it, and refuses to follow symlinks or write through symlinked directories.
+- Diagnostic outputs no longer copy source excerpts into CLI reports, JSON, PR comments, or MCP health data; all source excerpts are withheld from analyzer findings. MCP prompt templates omit code containing recognizable credential patterns.
 
 ### 🔍 Added
 - `init --dry-run` previews selected file operations without creating directories or modifying any files.
@@ -20,8 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI help examples now use the published `repoguard-rules` package name.
 
 ### 🔄 Changed
+- JSON keeps `codeSnippet` for compatibility but returns a fixed withheld-source placeholder. Inspect the reported file and line locally instead of relying on copied source text.
 - **Migration:** plain `init` (including `init --force`) no longer creates or changes `.github/workflows/repoguard.yml`. Run `init --with-ci` if you relied on the previous automatic CI setup.
-- The opt-in CI workflow pins both external Actions to immutable commits, disables persisted checkout credentials, and only requests `contents: read` and `pull-requests: write` (no `issues: write`).
+- The opt-in CI workflow pins checkout and Node setup Actions to immutable commits; it installs the exact `repoguard-rules@1.7.1` package outside the PR checkout instead of running the older v1.7.0 RepoGuard Action. It disables lifecycle scripts/persisted checkout credentials, only passes `GITHUB_TOKEN` to the review step, and requests `contents: read` and `pull-requests: write` (no `issues: write`). **Do not run the opt-in workflow before v1.7.1 is published to npm.**
 
 ---
 

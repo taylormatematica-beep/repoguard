@@ -18,13 +18,15 @@ function analyzeFixture(filename) {
 const unwrapViolations = analyzeFixture('bad_unwrap.rs').filter(v => v.ruleId === 'RULE-RS-01');
 assert.strictEqual(unwrapViolations.length, 2, 'bad_unwrap.rs should trigger exactly 2 RULE-RS-01 violations (.unwrap and .expect)');
 assert.strictEqual(unwrapViolations[0].severity, 'warning', 'RULE-RS-01 should be a warning');
-assert(unwrapViolations[0].codeSnippet.includes('.unwrap()'), 'Should highlight .unwrap() call');
+assert.strictEqual(unwrapViolations[0].codeSnippet, '[source excerpt withheld to avoid exposing credentials]', 'Analyzer must withhold source excerpts');
+assert(unwrapViolations[0].message.includes('.unwrap()'), 'RULE-RS-01 still explains the detected problem');
 
 // Test 2: bad_axum_handler.rs (Direct sqlx::query! inside route handler)
 const axumViolations = analyzeFixture('bad_axum_handler.rs').filter(v => v.ruleId === 'RULE-RS-02');
 assert.strictEqual(axumViolations.length, 1, 'bad_axum_handler.rs should trigger exactly 1 RULE-RS-02 violation');
 assert.strictEqual(axumViolations[0].severity, 'warning', 'RULE-RS-02 should be a warning');
-assert(axumViolations[0].codeSnippet.includes('sqlx::query!'), 'Should highlight direct sqlx query');
+assert.strictEqual(axumViolations[0].codeSnippet, '[source excerpt withheld to avoid exposing credentials]', 'Analyzer must withhold source excerpts');
+assert(axumViolations[0].message.includes('database/ORM'), 'RULE-RS-02 still explains the database risk');
 
 // Test 3: good_handler.rs (Clean Architecture delegating to service)
 const goodHandlerViolations = analyzeFixture('good_handler.rs').filter(v => v.ruleId.startsWith('RULE-RS'));
