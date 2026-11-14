@@ -48,7 +48,7 @@ async function testMCP() {
   const initRes = await waitForResponse(1);
   assert(initRes.result, 'Initialize should return result');
   assert.strictEqual(initRes.result.serverInfo.name, 'repoguard-mcp');
-  assert.strictEqual(initRes.result.serverInfo.version, '1.7.0');
+  assert.strictEqual(initRes.result.serverInfo.version, '1.7.1');
   assert(initRes.result.capabilities.tools, 'Should declare tools capability');
   assert(initRes.result.capabilities.resources, 'Should declare resources capability');
   assert(initRes.result.capabilities.prompts, 'Should declare prompts capability');

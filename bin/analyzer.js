@@ -1,7 +1,7 @@
 /**
  * RepoGuard Architecture & Diff Analyzer Engine
  * Comprehensive Multi-Language Rule Engine (TypeScript, Python, Go, Rust, Cloud Security)
- * Version 1.7.0
+ * Version 1.7.1
  */
 
 const fs = require('fs');
@@ -171,10 +171,58 @@ const ARCHITECTURAL_RULES = [
   }
 ];
 
+// Git and SARIF use forward slashes; Windows filesystem paths must match the
+// same path-scoped rules before they become diagnostic locations.
+function normalizeFilename(filename) {
+  return typeof filename === 'string' ? filename.replace(/\\/g, '/') : filename;
+}
+
+// Findings describe a source location, but must not replicate code that could
+// contain an unknown credential. Detection still uses the original source.
+const OMITTED_SOURCE = '[source excerpt withheld to avoid exposing credentials]';
+const SENSITIVE_RULE_IDS = new Set(['RULE-02', 'RULE-SEC-01', 'RULE-SEC-02', 'RULE-09']);
+const SENSITIVE_PATTERNS = ARCHITECTURAL_RULES.filter(rule => SENSITIVE_RULE_IDS.has(rule.id))
+  .map(rule => rule.pattern);
+
+// Used for incidental, non-evidence fields and user-supplied MCP prompts. This
+// recognizes common credential shapes; it is not a general-purpose secret scanner.
+function containsSensitiveSource(text) {
+  if (typeof text !== 'string') return false;
+  if (SENSITIVE_PATTERNS.some(pattern => pattern.test(text))) return true;
+  if (/(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|redis|rediss):\/\/[^\s:@]+:[^\s@]+@/i.test(text)) return true;
+  const assignment = /\b(?:[A-Za-z_$][A-Za-z0-9_$]*)?(?:api[_-]?key|secret|password|auth[_-]?token|private[_-]?key|access[_-]?token)[A-Za-z0-9_$]*\s*[:=]\s*(\S+)/ig;
+  for (const match of text.matchAll(assignment)) {
+    // References to a secret manager are not themselves a copied credential.
+    if (!/^(?:process\.env\.|std::env::var\(|os\.environ|Deno\.env\.)/i.test(match[1])) return true;
+  }
+  return false;
+}
+
+// At every serialization boundary, also protect callers passing raw findings.
+// Select known fields only: future analyzer internals must not leak into JSON.
+// Keep codeSnippet in place in the existing JSON schema for integrations.
+function publicFinding(violation) {
+  const safeText = value => value == null ? value
+    : typeof value === 'string' && !containsSensitiveSource(value)
+      ? value : '[metadata withheld to avoid exposing credentials]';
+  return {
+    ruleId: safeText(violation.ruleId),
+    ruleName: safeText(violation.ruleName),
+    severity: safeText(violation.severity),
+    category: safeText(violation.category),
+    filename: safeText(violation.filename),
+    lineNumber: Number.isInteger(violation.lineNumber) ? violation.lineNumber : 1,
+    codeSnippet: OMITTED_SOURCE,
+    message: safeText(violation.message),
+    suggestion: safeText(violation.suggestion)
+  };
+}
+
 /**
  * Analyzes Python FastAPI routes for direct DB operations
  */
 function analyzePythonFastAPIRoutes(content, filename) {
+  filename = normalizeFilename(filename);
   const violations = [];
   const lines = content.split('\n');
 
@@ -228,7 +276,7 @@ function analyzePythonFastAPIRoutes(content, filename) {
         category: 'Architecture',
         filename: filename,
         lineNumber: isDiff ? currentLineNumber : i + 1,
-        codeSnippet: trimmed,
+        codeSnippet: OMITTED_SOURCE,
         message: isCommit
           ? 'Direct database transaction commit detected inside a FastAPI route handler. Database mutations and transaction management must be encapsulated inside a service or repository layer.'
           : 'Direct database/ORM access detected inside a FastAPI route handler. Encapsulate database operations inside a service or repository layer.',
@@ -244,6 +292,7 @@ function analyzePythonFastAPIRoutes(content, filename) {
  * Analyzes Go HTTP handlers (Gin, Fiber, Echo, net/http) for direct DB/GORM access
  */
 function analyzeGolangHandlers(content, filename) {
+  filename = normalizeFilename(filename);
   const violations = [];
   const lines = content.split('\n');
 
@@ -277,7 +326,7 @@ function analyzeGolangHandlers(content, filename) {
         category: 'Error Handling',
         filename: filename,
         lineNumber: isDiff ? currentLineNumber : i + 1,
-        codeSnippet: trimmed,
+        codeSnippet: OMITTED_SOURCE,
         message: 'Unchecked error discarded via blank identifier (`_ = err`). AI assistants often silence errors to bypass Go compiler strictness. Handle the error explicitly.',
         suggestion: 'if err != nil { return err }'
       });
@@ -312,7 +361,7 @@ function analyzeGolangHandlers(content, filename) {
         category: 'Architecture',
         filename: filename,
         lineNumber: isDiff ? currentLineNumber : i + 1,
-        codeSnippet: trimmed,
+        codeSnippet: OMITTED_SOURCE,
         message: isMutation
           ? 'Direct database mutation/transaction executed inside a Go HTTP handler. Database persistence must be encapsulated within a repository layer.'
           : 'Direct database/ORM query detected inside a Go HTTP handler. Decouple database operations into a repository or service.',
@@ -328,6 +377,7 @@ function analyzeGolangHandlers(content, filename) {
  * Analyzes Rust code for panic-prone .unwrap() and Clean Architecture route violations (Axum, Actix-web, Rocket)
  */
 function analyzeRustCode(content, filename) {
+  filename = normalizeFilename(filename);
   const violations = [];
   const lines = content.split('\n');
 
@@ -383,7 +433,7 @@ function analyzeRustCode(content, filename) {
           category: 'Error Handling',
           filename: filename,
           lineNumber: isDiff ? currentLineNumber : i + 1,
-          codeSnippet: trimmed,
+          codeSnippet: OMITTED_SOURCE,
           message: 'Unsafe .unwrap() or .expect() in production Rust code. AI models frequently silence errors with .unwrap(), leading to runtime panics and thread crashes. Handle errors explicitly using ?, match, unwrap_or, or unwrap_or_default().',
           suggestion: 'let value = result?;'
         });
@@ -415,7 +465,7 @@ function analyzeRustCode(content, filename) {
           category: 'Architecture',
           filename: filename,
           lineNumber: isDiff ? currentLineNumber : i + 1,
-          codeSnippet: trimmed,
+          codeSnippet: OMITTED_SOURCE,
           message: 'Direct database/ORM access detected inside a Rust route handler (Axum/Actix-web/Rocket). Decouple persistence logic into a dedicated repository or service layer.',
           suggestion: 'let users = user_service::get_active_users(&pool).await?;'
         });
@@ -435,6 +485,7 @@ function analyzeRustCode(content, filename) {
  * Analyzes a diff or raw file content against architectural guardrails
  */
 function analyzeDiff(diffContent, filename) {
+  filename = normalizeFilename(filename);
   const violations = [];
 
   if (/\.py$/i.test(filename)) {
@@ -475,9 +526,9 @@ function analyzeDiff(diffContent, filename) {
             category: rule.category,
             filename: filename,
             lineNumber: currentLineNumber,
-            codeSnippet: cleanLine.trim(),
+            codeSnippet: OMITTED_SOURCE,
             message: rule.message,
-            suggestion: rule.suggestion ? rule.suggestion(cleanLine) : null
+            suggestion: rule.suggestion ? rule.suggestion() : null // Never pass untrusted source to report text.
           });
         }
       }
@@ -577,14 +628,14 @@ function formatGitHubComment(violations) {
   let comment = `### ⚠️ RepoGuard Architecture Audit: ${violations.length} Violation(s) Found\n\n`;
   comment += `Our AI-guardrails detected patterns that violate the repository's \`.cursorrules\`:\n\n`;
 
-  for (const v of violations) {
+  for (const original of violations) {
+    const v = publicFinding(original);
     const icon = v.severity === 'critical' ? '🚨' : v.severity === 'error' ? '❌' : v.severity === 'warning' ? '⚠️' : 'ℹ️';
     comment += `#### ${icon} \`${v.ruleId}\`: ${v.ruleName}\n`;
     comment += `- **File:** \`${v.filename}:${v.lineNumber}\`\n`;
     comment += `- **Category:** \`${v.category}\`\n`;
     comment += `- **Violation:** ${v.message}\n`;
-    const lang = v.filename.endsWith('.rs') ? 'rust' : v.filename.endsWith('.go') ? 'go' : v.filename.endsWith('.py') ? 'python' : 'typescript';
-    comment += `\`\`\`${lang}\n// Problematic code:\n${v.codeSnippet}\n\`\`\`\n\n`;
+    comment += `- **Source:** Excerpt withheld; inspect the referenced file and line locally.\n\n`;
     if (v.suggestion) {
       comment += `> 💡 **Architectural Suggestion:**\n> \`${v.suggestion}\`\n\n`;
     }
@@ -606,7 +657,7 @@ function formatSARIF(violations) {
         tool: {
           driver: {
             name: "RepoGuard",
-            version: "1.7.0",
+            version: "1.7.1",
             informationUri: "https://taylormatematica-beep.github.io/repoguard/",
             rules: ARCHITECTURAL_RULES.map(r => ({
               id: r.id,
@@ -619,7 +670,7 @@ function formatSARIF(violations) {
             }))
           }
         },
-        results: violations.map(v => ({
+        results: violations.map(publicFinding).map(v => ({
           ruleId: v.ruleId,
           level: v.severity === 'critical' || v.severity === 'error' ? 'error' : 'warning',
           message: { text: v.message },
@@ -645,17 +696,19 @@ function formatSARIF(violations) {
 function formatJSON(violations, healthScore, totalFiles) {
   return JSON.stringify({
     tool: "RepoGuard",
-    version: "1.7.0",
+    version: "1.7.1",
     totalFiles,
     healthScore: healthScore.score,
     grade: healthScore.grade,
     violationsCount: violations.length,
-    violations
+    violations: violations.map(publicFinding)
   }, null, 2);
 }
 
 module.exports = {
   analyzeDiff,
+  containsSensitiveSource,
+  publicFinding,
   analyzeGolangHandlers,
   analyzeRustCode,
   scanDirectory,

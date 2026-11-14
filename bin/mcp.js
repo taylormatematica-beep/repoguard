@@ -2,10 +2,10 @@ const readline = require('readline');
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const { scanDirectory, analyzeDiff, calculateHealthScore, ARCHITECTURAL_RULES } = require('./analyzer');
+const { scanDirectory, analyzeDiff, calculateHealthScore, ARCHITECTURAL_RULES, publicFinding, containsSensitiveSource } = require('./analyzer');
 
 /**
- * RepoGuard Model Context Protocol (MCP) Server v1.7.0
+ * RepoGuard Model Context Protocol (MCP) Server v1.7.1
  * Implements Tools, Resources, and Prompts for Claude Desktop, Cursor, and Glama runners.
  */
 function startMCPServer() {
@@ -39,7 +39,7 @@ function startMCPServer() {
           },
           serverInfo: {
             name: 'repoguard-mcp',
-            version: '1.7.0'
+            version: '1.7.1'
           }
         });
       } else if (method === 'notifications/initialized') {
@@ -92,7 +92,7 @@ function startMCPServer() {
         if (name === 'repoguard_get_rules') {
           const rulesText = ARCHITECTURAL_RULES.map(r => `[${r.id}] (${r.severity}) [${r.category}] ${r.name}:\n  ${r.message}`).join('\n\n');
           sendResponse(id, {
-            content: [{ type: 'text', text: `RepoGuard v1.7.0 Architectural Rules (${ARCHITECTURAL_RULES.length} active):\n\n${rulesText}` }]
+            content: [{ type: 'text', text: `RepoGuard v1.7.1 Architectural Rules (${ARCHITECTURAL_RULES.length} active):\n\n${rulesText}` }]
           });
         } else if (name === 'repoguard_audit') {
           const dir = args.directory || process.cwd();
@@ -109,7 +109,7 @@ function startMCPServer() {
           const summary = `RepoGuard Audit Complete:\nHealth Score: ${score}/100 (Grade: ${grade})\nAudited Files: ${files.length}\nTotal Violations: ${allViolations.length}\n\n` +
             (allViolations.length === 0
               ? '✨ Flawless architecture! Zero drift detected across all files.'
-              : allViolations.map(v => `- [${v.ruleId}] ${v.filename}:${v.lineNumber} - ${v.message}\n  Fix: ${v.suggestion || 'Refactor to clean architecture'}`).join('\n'));
+              : allViolations.map(publicFinding).map(v => `- [${v.ruleId}] ${v.filename}:${v.lineNumber} - ${v.message}\n  Fix: ${v.suggestion || 'Refactor to clean architecture'}`).join('\n'));
           sendResponse(id, { content: [{ type: 'text', text: summary }] });
         } else if (name === 'repoguard_diff') {
           try {
@@ -130,7 +130,7 @@ function startMCPServer() {
               sendResponse(id, { content: [{ type: 'text', text: '✨ Git diff is architecturally clean! Safe to commit.' }] });
             } else {
               const diffReport = `⚠️ Found ${violations.length} architectural issue(s) in uncommitted changes:\n\n` +
-                violations.map(v => `- [${v.ruleId}] ${v.filename}:${v.lineNumber} -> ${v.message}\n  Suggested Fix: ${v.suggestion || 'Move to service layer'}`).join('\n');
+                violations.map(publicFinding).map(v => `- [${v.ruleId}] ${v.filename}:${v.lineNumber} -> ${v.message}\n  Suggested Fix: ${v.suggestion || 'Move to service layer'}`).join('\n');
               sendResponse(id, { content: [{ type: 'text', text: diffReport }] });
             }
           } catch (err) {
@@ -138,12 +138,13 @@ function startMCPServer() {
           }
         } else if (name === 'repoguard_fix') {
           const { code, filename } = args;
+          const safeFilename = publicFinding({ filename }).filename;
           const violations = analyzeDiff(code, filename);
           if (violations.length === 0) {
             sendResponse(id, { content: [{ type: 'text', text: '✨ Flawless architecture! Zero violations found in this snippet.' }] });
           } else {
-            const report = `Found ${violations.length} architectural item(s) to refactor in ${filename}:\n\n` +
-              violations.map(v => `❌ Line ${v.lineNumber} [${v.ruleId}]: ${v.message}\n💡 Suggested Fix: ${v.suggestion || 'Move into service layer'}`).join('\n\n');
+            const report = `Found ${violations.length} architectural item(s) to refactor in ${safeFilename}:\n\n` +
+              violations.map(publicFinding).map(v => `❌ Line ${v.lineNumber} [${v.ruleId}]: ${v.message}\n💡 Suggested Fix: ${v.suggestion || 'Move into service layer'}`).join('\n\n');
             sendResponse(id, { content: [{ type: 'text', text: report }] });
           }
         } else {
@@ -203,7 +204,7 @@ function startMCPServer() {
                   grade,
                   totalFiles: files.length,
                   totalViolations: allViolations.length,
-                  violations: allViolations
+                  violations: allViolations.map(publicFinding)
                 }, null, 2)
               }
             ]
@@ -249,7 +250,10 @@ function startMCPServer() {
       } else if (method === 'prompts/get') {
         const { name, arguments: promptArgs = {} } = params || {};
         if (name === 'architectural_review') {
-          const diffText = promptArgs.diff ? `\n\nCode to review:\n\`\`\`\n${promptArgs.diff}\n\`\`\`` : '';
+          const safeDiff = containsSensitiveSource(promptArgs.diff)
+            ? '[source omitted: possible credential; remove secrets before requesting a review]'
+            : promptArgs.diff;
+          const diffText = safeDiff ? `\n\nCode to review:\n\`\`\`\n${safeDiff}\n\`\`\`` : '';
           sendResponse(id, {
             description: 'Enforce Clean Architecture and prevent AI code rot',
             messages: [
@@ -269,8 +273,11 @@ ${diffText}`
             ]
           });
         } else if (name === 'clean_architecture_refactor') {
-          const codeSnippet = promptArgs.code || '';
-          const lang = promptArgs.language || 'code';
+          const codeSnippet = containsSensitiveSource(promptArgs.code)
+            ? '[source omitted: possible credential; remove secrets before requesting a refactor]'
+            : (promptArgs.code || '');
+          const lang = ['typescript', 'javascript', 'python', 'go', 'rust'].includes(promptArgs.language)
+            ? promptArgs.language : 'code';
           sendResponse(id, {
             description: 'Refactor direct DB queries into decoupled Service and Repository layers',
             messages: [

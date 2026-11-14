@@ -27,6 +27,8 @@
   <a href="https://taylormatematica-beep.github.io/repoguard/"><img src="https://img.shields.io/badge/playground-live%20demo-00f2fe?style=flat-square" alt="Live Playground"></a>
 </p>
 
+> **v1.7.1:** `init` is temporarily unavailable while its filesystem safety is being redesigned. Other commands remain available.
+>
 > **New in v1.7.0:** Rust panic safety, expanded secret detection, and MCP Tools + Resources + Prompts.
 
 > 🎮 **Try it in your browser:** [RepoGuard Interactive Playground](https://taylormatematica-beep.github.io/repoguard/#playground) — Audit code snippets in real-time with zero install.
@@ -42,33 +44,21 @@ AI coding assistants (**Cursor, GitHub Copilot, Claude Code, Windsurf**) write 3
 3. **Escape Type Safety & Error Handling:** Scatter `: any` in TypeScript, discard errors with `_ = err` in Go, or use panic-prone `.unwrap()` in Rust production code.
 4. **Leak Sensitive Secrets:** Hardcode AI/cloud provider tokens, embed database credentials in connection URLs, or expose secrets with the `NEXT_PUBLIC_` prefix.
 
-RepoGuard acts as an automated architecture supervisor: it generates strict, customized `.cursorrules`, `CLAUDE.md`, and `.windsurfrules` context files, verifies pre-commit diffs in ~12ms, runs an MCP server with Tools, Resources, and Prompts, and performs inline audits on every Pull Request.
+RepoGuard acts as an automated architecture supervisor: it analyzes code and diffs, runs an MCP server with Tools, Resources, and Prompts, and can audit Pull Requests with a manually configured workflow. Context-file generation is temporarily unavailable in v1.7.1.
 
 ---
 
 ## 🚀 Quickstart
 
-Run directly in any repository (zero installation required):
+Audit a repository (zero installation required):
 
 ```bash
-npx repoguard-rules init
+npx repoguard-rules audit
 ```
 
-Or install globally:
+**`init` is temporarily unavailable in v1.7.1**, including `--dry-run`, `--force`, and `--with-ci`. It exits with an error before scanning or changing project files. It does not generate context files or a CI workflow. Safe initialization will be addressed separately.
 
-```bash
-npm install -g repoguard-rules
-repoguard init
-```
-
-### What happens in 2 seconds:
-- 🔍 **Auto-detects your tech stack** (Next.js, NestJS, Express, FastAPI, Django, Gin, Fiber, Axum, Actix-web, Prisma, GORM, SQLx, Diesel, etc.).
-- 🔐 **Audits code and supported config files** (`.env`, `.env.*`, `.json`, `.yaml`, `.toml`, `.pem`, `.key`) for provider tokens and embedded database credentials.
-- 📝 **Generates tailored `.cursorrules`** (for Cursor AI).
-- 🤖 **Generates a comprehensive `CLAUDE.md`** (for Claude Code).
-- 🌊 **Generates `.windsurfrules`** (for Windsurf IDE).
-- 🛡️ **Generates `.github/copilot-instructions.md`** (for GitHub Copilot).
-- ⚙️ **Configures pre-commit guard hooks & CI workflow**.
+You can also install globally with `npm install -g repoguard-rules`, then run `repoguard audit`. Review results locally. Hook installation is a separate command and modifies the repository.
 
 ---
 
@@ -83,7 +73,7 @@ RepoGuard ships with a built-in, zero-dependency **MCP Server** implementing the
   "mcpServers": {
     "repoguard": {
       "command": "npx",
-      "args": ["-y", "repoguard-rules@1.7.0", "mcp"]
+      "args": ["-y", "repoguard-rules@1.7.1", "mcp"]
     }
   }
 }
@@ -96,7 +86,7 @@ RepoGuard ships with a built-in, zero-dependency **MCP Server** implementing the
   "mcpServers": {
     "repoguard": {
       "command": "npx",
-      "args": ["-y", "repoguard-rules@1.7.0", "mcp"]
+      "args": ["-y", "repoguard-rules@1.7.1", "mcp"]
     }
   }
 }
@@ -121,7 +111,7 @@ RepoGuard ships with a built-in, zero-dependency **MCP Server** implementing the
 
 | Command | Description |
 | :--- | :--- |
-| `npx repoguard-rules init` | Scans codebase and generates tailored AI context files (TS, Py, Go, Rust). |
+| `npx repoguard-rules init` | Temporarily unavailable, including all options. |
 | `npx repoguard-rules audit` | Evaluates entire codebase and returns an **Architectural Health Score (A+ to F)**. |
 | `npx repoguard-rules audit --format=sarif` | Generates standard OASIS SARIF v2.1.0 for **GitHub Code Scanning** integration. |
 | `npx repoguard-rules audit --format=json` | Outputs machine-readable JSON for custom CI/CD pipelines. |
@@ -130,6 +120,12 @@ RepoGuard ships with a built-in, zero-dependency **MCP Server** implementing the
 | `npx repoguard-rules mcp` | Launches the Model Context Protocol stdio server for AI agents. |
 | `npx repoguard-rules hook install` | Configures local `.git/hooks/pre-commit` to prevent rule breaches. |
 | `npx repoguard-rules rules` | Displays all 16 built-in architectural rules and descriptions. |
+
+### Sensitive diagnostic output
+
+RepoGuard scans source locally but **does not echo raw source excerpts** in CLI audit/fix reports, PR review comments, JSON, or MCP health results. JSON retains the `codeSnippet` field for compatibility, with a fixed `[source excerpt withheld to avoid exposing credentials]` value. Rule IDs, file paths, line numbers, severity, and safe explanations and suggestions remain available (paths that match a credential pattern are withheld); open the referenced line in your own editor to inspect it. This reduces the risk of copying a detected credential into logs or a persistent PR comment; it does **not** guarantee that every possible secret will be detected in source code.
+
+MCP prompt templates omit user-provided code when they recognize a credential pattern. Do not paste credentials into prompts, filenames, or third-party services; revoke any real credential already committed to a repository. No scan removes secrets from git history.
 
 ### Ignoring Files & Folders (`.repoguardignore`)
 Add a `.repoguardignore` file to your root directory to skip specific files or directories:
@@ -168,7 +164,7 @@ test/fixtures/
 
 ## 🤖 GitHub Action & Security Integration
 
-RepoGuard dogfoods its own architecture on every push. You can add continuous architectural enforcement to your CI/CD pipeline using the official Action:
+RepoGuard dogfoods its own architecture on every push. Workflow generation via `init` is unavailable in v1.7.1. Do not use the v1.7.0 Action for PR comments containing sensitive code. The example below is this repository's own CI job:
 
 ```yaml
 # .github/workflows/ci.yml

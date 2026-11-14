@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * RepoGuard CLI v1.7.0 — The Architecture Guardian for AI-Assisted Codebases
+ * RepoGuard CLI v1.7.1 — The Architecture Guardian for AI-Assisted Codebases
  * Zero-dependency standalone CLI tool
  * Multi-Language Support: TypeScript/JavaScript, Python, Golang, Rust, Secrets 2.0
  */
@@ -11,6 +11,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const {
   analyzeDiff,
+  publicFinding,
   scanDirectory,
   calculateHealthScore,
   formatGitHubComment,
@@ -42,7 +43,7 @@ ${colors.cyan}${colors.bright}  ____                     ____                   
  |  _ <  __/ |_) | (_) | | |_| | |_| | (_| | | | (_| |
  |_| \\_\\___| .__/ \\___/   \\____|\\__,_|\\__,_|_|  \\__,_|
            |_|                                        ${colors.reset}
-  ${colors.dim}The Architecture Guardian for AI-assisted code • v1.7.0${colors.reset}
+  ${colors.dim}The Architecture Guardian for AI-assisted code • v1.7.1${colors.reset}
 `);
 }
 
@@ -266,7 +267,7 @@ ${stack.language === 'TypeScript' ? '- NEVER use "any" or "as any". Define expli
 function generateClaudeMd(stack) {
   if (stack.language === 'Rust') {
     return `# CLAUDE.md — Rust Architecture & Context Guide
-> Enforced by RepoGuard v1.7.0. Read this before proposing any changes.
+> Enforced by RepoGuard v1.7.1. Read this before proposing any changes.
 
 ## Project Overview
 - Framework: ${stack.framework}
@@ -282,7 +283,7 @@ function generateClaudeMd(stack) {
   }
 
   return `# CLAUDE.md — Architecture & Context Guide
-> Enforced by RepoGuard v1.7.0. Read this before proposing any changes.
+> Enforced by RepoGuard v1.7.1. Read this before proposing any changes.
 
 ## Project Overview
 - **Framework:** ${stack.framework}
@@ -350,9 +351,8 @@ on:
     types: [opened, synchronize, reopened]
 
 permissions:
-  pull-requests: write
   contents: read
-  issues: write
+  pull-requests: write
 
 jobs:
   audit:
@@ -360,15 +360,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+
+      # The older v1.7.0 Action can repeat source excerpts in PR comments.
+      # Use the fixed package; install outside the untrusted PR checkout.
+      # Requires repoguard-rules@1.7.1 to be published before this workflow runs.
+      - name: Install RepoGuard v1.7.1
+        run: |
+          cd "$RUNNER_TEMP"
+          npm install --prefix "$RUNNER_TEMP/repoguard" --no-save --ignore-scripts --no-audit --no-fund --package-lock=false --registry=https://registry.npmjs.org/ repoguard-rules@1.7.1
 
       - name: Run RepoGuard Architecture Review
-        uses: taylormatematica-beep/repoguard@main
-        with:
-          github_token: \${{ secrets.GITHUB_TOKEN }}
-          strict_mode: true
+        env:
+          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+        run: node "$RUNNER_TEMP/repoguard/node_modules/repoguard-rules/bin/repoguard.js" ci
 `;
 }
 
@@ -403,68 +416,9 @@ if (!isJsonFormat && !isSarifFormat) {
 const targetDir = process.cwd();
 
 if (command === 'init') {
-  console.log(`${colors.cyan}🔍 Scanning repository architecture...${colors.reset}`);
-  
-  const stack = detectProjectStack(targetDir);
-  console.log(`  ${colors.green}✓${colors.reset} Framework: ${colors.bright}${stack.framework}${colors.reset}`);
-  console.log(`  ${colors.green}✓${colors.reset} Language:  ${colors.bright}${stack.language}${colors.reset}`);
-  console.log(`  ${colors.green}✓${colors.reset} ORM/Data:  ${colors.bright}${stack.orm}${colors.reset}`);
-  console.log(`  ${colors.green}✓${colors.reset} Directory: ${colors.bright}${stack.srcDir}/${colors.reset}\n`);
-
-  // 1. .cursorrules
-  fs.writeFileSync(path.join(targetDir, '.cursorrules'), generateCursorRules(stack), 'utf8');
-  console.log(`${colors.green}✨ Generated:${colors.reset} .cursorrules (For Cursor AI)`);
-
-  // 2. CLAUDE.md
-  fs.writeFileSync(path.join(targetDir, 'CLAUDE.md'), generateClaudeMd(stack), 'utf8');
-  console.log(`${colors.green}✨ Generated:${colors.reset} CLAUDE.md (For Claude Code CLI)`);
-
-  // 3. .windsurfrules
-  fs.writeFileSync(path.join(targetDir, '.windsurfrules'), generateWindsurfRules(stack), 'utf8');
-  console.log(`${colors.green}✨ Generated:${colors.reset} .windsurfrules (For Windsurf Cascade)`);
-
-  // 4. .github/copilot-instructions.md
-  const githubDir = path.join(targetDir, '.github');
-  if (!fs.existsSync(githubDir)) fs.mkdirSync(githubDir, { recursive: true });
-  fs.writeFileSync(path.join(githubDir, 'copilot-instructions.md'), generateCopilotInstructions(stack), 'utf8');
-  console.log(`${colors.green}✨ Generated:${colors.reset} .github/copilot-instructions.md (For GitHub Copilot)`);
-
-  // 5. GitHub Action Workflow
-  const workflowsDir = path.join(githubDir, 'workflows');
-  if (!fs.existsSync(workflowsDir)) fs.mkdirSync(workflowsDir, { recursive: true });
-  fs.writeFileSync(path.join(workflowsDir, 'repoguard.yml'), generateGitHubAction(), 'utf8');
-  console.log(`${colors.green}✨ Generated:${colors.reset} .github/workflows/repoguard.yml (For CI PR checks)\n`);
-
-  // 6. Viral Loop: Inject / Display Official RepoGuard Badge
-  const badgeMd = `[![Architecture: Guarded by RepoGuard](https://img.shields.io/badge/Architecture-Guarded%20by%20RepoGuard-00f2fe?style=flat-square)](https://github.com/taylormatematica-beep/repoguard)`;
-  const targetReadme = path.join(targetDir, 'README.md');
-  if (fs.existsSync(targetReadme)) {
-    try {
-      let rText = fs.readFileSync(targetReadme, 'utf8');
-      if (!rText.includes('Guarded by RepoGuard')) {
-        if (rText.startsWith('# ')) {
-          const firstLineEnd = rText.indexOf('\n');
-          rText = rText.slice(0, firstLineEnd + 1) + '\n' + badgeMd + '\n' + rText.slice(firstLineEnd + 1);
-        } else {
-          rText = badgeMd + '\n\n' + rText;
-        }
-        fs.writeFileSync(targetReadme, rText, 'utf8');
-        console.log(`${colors.green}🛡️ Injected:${colors.reset} Architecture badge into your README.md!`);
-      }
-    } catch (_) {}
-  }
-
-  console.log(`${colors.bright}${colors.green}🎉 Setup Complete! Your codebase is now guarded across all major AI tools.${colors.reset}\n`);
-
-  console.log(`${colors.bright}🛡️ Show off your clean architecture to contributors & users!${colors.reset}`);
-  console.log(`Add this badge to your README.md:`);
-  console.log(`${colors.cyan}${badgeMd}${colors.reset}\n`);
-
-  console.log(`${colors.dim}─────────────────────────────────────────────────────────────────────────────${colors.reset}`);
-  console.log(`💡 ${colors.bright}Need automated PR review bots & team CI enforcement?${colors.reset}`);
-  console.log(`   Upgrade to RepoGuard Pro ($12/mo): ${colors.cyan}https://taylormatematica-beep.github.io/repoguard/#pricing${colors.reset}`);
-  console.log(`${colors.dim}─────────────────────────────────────────────────────────────────────────────${colors.reset}\n`);
-
+  console.error('RepoGuard init is temporarily unavailable in v1.7.1. No project files were scanned or changed by init.');
+  process.exitCode = 1;
+  return;
 } else if (command === 'audit') {
   const startTime = Date.now();
   const files = scanDirectory(targetDir);
@@ -507,11 +461,11 @@ if (command === 'init') {
 
   if (allViolations.length > 0) {
     console.log(`${colors.yellow}Detected Architectural Drift:${colors.reset}\n`);
-    for (const v of allViolations.slice(0, 10)) {
+    for (const v of allViolations.slice(0, 10).map(publicFinding)) {
       const icon = v.severity === 'critical' ? '🚨' : v.severity === 'error' ? '❌' : '⚠️';
       console.log(`  ${icon} ${colors.bright}${v.ruleId}${colors.reset} in ${colors.cyan}${v.filename}:${v.lineNumber}${colors.reset}`);
       console.log(`     ${v.message}`);
-      console.log(`     ${colors.dim}Code: "${v.codeSnippet.substring(0, 70)}"${colors.reset}\n`);
+      console.log(`     ${colors.dim}Source excerpt withheld; inspect the referenced line locally.${colors.reset}\n`);
     }
 
     if (allViolations.length > 10) {
@@ -555,7 +509,7 @@ if (command === 'init') {
       console.log(`${colors.green}✨ Git diff is architecturally clean! Safe to commit.${colors.reset}\n`);
     } else {
       console.log(`${colors.yellow}⚠️  Found ${violations.length} architectural issue(s) in your uncommitted changes:${colors.reset}\n`);
-      for (const v of violations) {
+      for (const v of violations.map(publicFinding)) {
         console.log(`  - [${v.ruleId}] ${v.filename}:${v.lineNumber} -> ${v.message}`);
       }
       console.log(`\n${colors.dim}Fix these issues or run with --ignore-guard to bypass.${colors.reset}\n`);
@@ -572,7 +526,7 @@ if (command === 'init') {
     process.exit(1);
   }
 
-  const hookScript = `#!/bin/sh\n# RepoGuard Pre-Commit Architecture Hook\nnpx repoguard diff\n`;
+  const hookScript = `#!/bin/sh\n# RepoGuard Pre-Commit Architecture Hook\nnpx repoguard-rules diff\n`;
   const hookPath = path.join(hooksDir, 'pre-commit');
   fs.writeFileSync(hookPath, hookScript, { mode: 0o755 });
   console.log(`${colors.green}✅ Pre-commit hook installed in .git/hooks/pre-commit!${colors.reset}`);
@@ -622,9 +576,9 @@ if (command === 'init') {
 
   console.log(`${colors.bright}Found ${allViolations.length} item(s) to refactor:${colors.reset}\n`);
 
-  for (const v of allViolations) {
+  for (const v of allViolations.map(publicFinding)) {
     console.log(`${colors.dim}─── [${v.ruleId}] ${v.filename}:${v.lineNumber} ─────────────────────────────${colors.reset}`);
-    console.log(`  ${colors.red}❌ Problematic: ${v.codeSnippet}${colors.reset}`);
+    console.log(`  ${colors.dim}Source excerpt withheld; inspect the referenced line locally.${colors.reset}`);
     if (v.suggestion) {
       console.log(`  ${colors.green}✅ Suggested Fix: ${v.suggestion}${colors.reset}`);
     }
@@ -638,15 +592,15 @@ if (command === 'init') {
 
 } else {
   console.log(`Usage:
-  ${colors.bright}npx repoguard init${colors.reset}                  Generate .cursorrules, CLAUDE.md & Windsurf rules (Go, Python, TypeScript, Rust)
-  ${colors.bright}npx repoguard audit${colors.reset}                 Full codebase scan with Architectural Health Score (A+ to F)
-  ${colors.bright}npx repoguard audit --format=sarif${colors.reset}  Export SARIF v2.1.0 report for GitHub Code Scanning
-  ${colors.bright}npx repoguard audit --format=json${colors.reset}   Export machine-readable JSON for custom CI/CD pipelines
-  ${colors.bright}npx repoguard fix${colors.reset}                   Inspect and generate actionable architectural fixes
-  ${colors.bright}npx repoguard mcp${colors.reset}                   Launch Model Context Protocol (MCP) server (Tools, Resources, Prompts)
-  ${colors.bright}npx repoguard diff${colors.reset}                  Audit uncommitted git changes in real-time
-  ${colors.bright}npx repoguard hook install${colors.reset}          Install pre-commit hook to block AI drift locally
-  ${colors.bright}npx repoguard review${colors.reset}                Simulate PR review audit for GitHub CI
-  ${colors.bright}npx repoguard rules${colors.reset}                 List all active architectural rules (16 rules)
+  ${colors.bright}npx repoguard-rules init${colors.reset}  Temporarily unavailable in v1.7.1
+  ${colors.bright}npx repoguard-rules audit${colors.reset}                 Full codebase scan with Architectural Health Score (A+ to F)
+  ${colors.bright}npx repoguard-rules audit --format=sarif${colors.reset}  Export SARIF v2.1.0 report for GitHub Code Scanning
+  ${colors.bright}npx repoguard-rules audit --format=json${colors.reset}   Export machine-readable JSON for custom CI/CD pipelines
+  ${colors.bright}npx repoguard-rules fix${colors.reset}                   Inspect and generate actionable architectural fixes
+  ${colors.bright}npx repoguard-rules mcp${colors.reset}                   Launch Model Context Protocol (MCP) server (Tools, Resources, Prompts)
+  ${colors.bright}npx repoguard-rules diff${colors.reset}                  Audit uncommitted git changes in real-time
+  ${colors.bright}npx repoguard-rules hook install${colors.reset}          Install pre-commit hook to block AI drift locally
+  ${colors.bright}npx repoguard-rules review${colors.reset}                Simulate PR review audit for GitHub CI
+  ${colors.bright}npx repoguard-rules rules${colors.reset}                 List all active architectural rules (16 rules)
 `);
 }

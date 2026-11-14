@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.7.1] - Unreleased
+### Changed
+- `init` is temporarily unavailable, including `--force`, `--dry-run`, and `--with-ci`; it exits with an error before scanning or modifying project files. Context-file and CI workflow generation are deferred.
+- JSON keeps `codeSnippet` for compatibility but returns a fixed withheld-source placeholder. Inspect the reported file and line locally instead of relying on copied source text.
+- Normalize Windows path separators before applying path-scoped rules and reporting filenames.
+
+### Fixed
+- Diagnostic outputs no longer copy source excerpts into CLI reports, JSON, PR comments, or MCP health data; all source excerpts are withheld from analyzer findings. MCP prompt templates omit code containing recognizable credential patterns.
+
+---
+
 ## [1.7.0] - 2026-10-14
 ### 🦀 Added
 - **Rust Clean Architecture & Panic Safety Engine:**
