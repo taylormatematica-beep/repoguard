@@ -58,6 +58,14 @@ const hiddenName = analyzeDiff(`console.log("check"); const NEXT_PUBLIC_SECRET_K
 assert(hiddenName.some(v => v.ruleId === 'RULE-04'));
 assertNoValue(synthetic, JSON.stringify(hiddenName), 'same-line fallback redaction');
 
+// Node's path.relative uses backslashes on Windows. Path-scoped rules and
+// diagnostic locations must work there without exposing the source line.
+const windowsFindings = analyzeDiff(`const api_key = "${synthetic}"; console.log(api_key);`, 'src\\services\\logger.ts');
+assert(windowsFindings.some(v => v.ruleId === 'RULE-02'));
+assert(windowsFindings.some(v => v.ruleId === 'RULE-04'), 'Windows paths must match path-scoped rules');
+assert(windowsFindings.every(v => v.filename === 'src/services/logger.ts'));
+assertNoValue(synthetic, JSON.stringify(windowsFindings), 'Windows diagnostic output');
+
 const externalFinding = {
   ruleId: 'RULE-01', ruleName: 'Architecture', severity: 'error', category: 'Architecture',
   filename: 'src/controllers/user.controller.ts', lineNumber: 42,

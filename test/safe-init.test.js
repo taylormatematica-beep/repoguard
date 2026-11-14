@@ -219,7 +219,8 @@ sandbox(root => {
   assert.notStrictEqual(fs.readFileSync(path.join(root, ciFile), 'utf8'), 'custom workflow\n');
 });
 
-// Forced replacement retains restrictive file permissions in both copies.
+// POSIX mode bits do not represent NTFS ACLs on Windows. Check content on
+// every platform, and verify strict file modes only where Node exposes them.
 sandbox(root => {
   const file = path.join(root, '.cursorrules');
   write(root, '.cursorrules', 'private rules');
@@ -227,8 +228,13 @@ sandbox(root => {
   assertSuccess(run(root, '--force'));
   const names = backups(root, '.cursorrules');
   assert.strictEqual(names.length, 1);
-  assert.strictEqual(fs.statSync(file).mode & 0o777, 0o600);
-  assert.strictEqual(fs.statSync(path.join(root, names[0])).mode & 0o777, 0o600);
+  const backup = path.join(root, names[0]);
+  assert.strictEqual(fs.readFileSync(backup, 'utf8'), 'private rules');
+  assert.notStrictEqual(fs.readFileSync(file, 'utf8'), 'private rules');
+  if (process.platform !== 'win32') {
+    assert.strictEqual(fs.statSync(file).mode & 0o777, 0o600);
+    assert.strictEqual(fs.statSync(backup).mode & 0o777, 0o600);
+  }
 });
 
 // A destination swapped to a symlink after backup cannot clobber its target.
@@ -250,7 +256,7 @@ sandbox(root => {
       if (backupCopied && name === file) {
         backupCopied = false;
         fs.unlinkSync(file);
-        fs.symlinkSync(outside, file);
+        fs.symlinkSync(outside, file, 'file');
       }
       return stat;
     };
@@ -273,7 +279,7 @@ sandbox(root => {
 sandbox(root => {
   const outside = path.join(root, 'outside.txt');
   write(root, 'outside.txt', 'Do not change me');
-  fs.symlinkSync(outside, path.join(root, '.cursorrules'));
+  fs.symlinkSync(outside, path.join(root, '.cursorrules'), 'file');
   const forced = run(root, '--force');
   assert.notStrictEqual(forced.status, 0);
   assert(forced.stderr.includes('symlink'));
@@ -291,7 +297,7 @@ sandbox(root => {
   const outside = path.join(root, 'outside-ci.yml');
   write(root, 'outside-ci.yml', 'Do not change me');
   fs.mkdirSync(path.join(root, '.github/workflows'), { recursive: true });
-  fs.symlinkSync(outside, path.join(root, ciFile));
+  fs.symlinkSync(outside, path.join(root, ciFile), 'file');
   const forcedCi = run(root, '--with-ci', '--force');
   assert.notStrictEqual(forcedCi.status, 0);
   assert(forcedCi.stderr.includes('symlink'));
@@ -307,7 +313,7 @@ sandbox(root => {
 sandbox(root => {
   const outside = path.join(root, 'other-directory');
   fs.mkdirSync(outside);
-  fs.symlinkSync(outside, path.join(root, '.github'));
+  fs.symlinkSync(outside, path.join(root, '.github'), 'dir');
   const result = run(root);
   assert.notStrictEqual(result.status, 0);
   assert(result.stderr.includes('non-directory or symlink'));
@@ -320,7 +326,7 @@ sandbox(root => {
   const outside = path.join(root, 'other-directory');
   fs.mkdirSync(path.join(root, '.github'));
   fs.mkdirSync(outside);
-  fs.symlinkSync(outside, path.join(root, '.github/workflows'));
+  fs.symlinkSync(outside, path.join(root, '.github/workflows'), 'dir');
   const withCi = run(root, '--with-ci');
   assert.notStrictEqual(withCi.status, 0);
   assert(withCi.stderr.includes('non-directory or symlink'));
@@ -359,4 +365,4 @@ sandbox(root => {
   assert(!fs.existsSync(path.join(root, 'CLAUDE.md')));
 });
 
-console.log('Safe Init tests passed: AI defaults, CI opt-in/pins, preservation, dry runs, backups, file modes, symlinks, invalid inputs.');
+console.log('Safe Init tests passed: AI defaults, CI opt-in/pins, preservation, dry runs, backups, POSIX modes where supported, symlinks, invalid inputs.');

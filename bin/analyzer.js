@@ -171,6 +171,12 @@ const ARCHITECTURAL_RULES = [
   }
 ];
 
+// Git and SARIF use forward slashes; Windows filesystem paths must match the
+// same path-scoped rules before they become diagnostic locations.
+function normalizeFilename(filename) {
+  return typeof filename === 'string' ? filename.replace(/\\/g, '/') : filename;
+}
+
 // Findings describe a source location, but must not replicate code that could
 // contain an unknown credential. Detection still uses the original source.
 const OMITTED_SOURCE = '[source excerpt withheld to avoid exposing credentials]';
@@ -216,6 +222,7 @@ function publicFinding(violation) {
  * Analyzes Python FastAPI routes for direct DB operations
  */
 function analyzePythonFastAPIRoutes(content, filename) {
+  filename = normalizeFilename(filename);
   const violations = [];
   const lines = content.split('\n');
 
@@ -285,6 +292,7 @@ function analyzePythonFastAPIRoutes(content, filename) {
  * Analyzes Go HTTP handlers (Gin, Fiber, Echo, net/http) for direct DB/GORM access
  */
 function analyzeGolangHandlers(content, filename) {
+  filename = normalizeFilename(filename);
   const violations = [];
   const lines = content.split('\n');
 
@@ -369,6 +377,7 @@ function analyzeGolangHandlers(content, filename) {
  * Analyzes Rust code for panic-prone .unwrap() and Clean Architecture route violations (Axum, Actix-web, Rocket)
  */
 function analyzeRustCode(content, filename) {
+  filename = normalizeFilename(filename);
   const violations = [];
   const lines = content.split('\n');
 
@@ -476,6 +485,7 @@ function analyzeRustCode(content, filename) {
  * Analyzes a diff or raw file content against architectural guardrails
  */
 function analyzeDiff(diffContent, filename) {
+  filename = normalizeFilename(filename);
   const violations = [];
 
   if (/\.py$/i.test(filename)) {

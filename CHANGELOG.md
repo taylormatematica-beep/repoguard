@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🔄 Changed
 - JSON keeps `codeSnippet` for compatibility but returns a fixed withheld-source placeholder. Inspect the reported file and line locally instead of relying on copied source text.
+- Normalize Windows path separators before applying path-scoped rules and reporting filenames. POSIX-only file-mode assertions are not valid for NTFS ACLs; review ACLs manually before using `init --force` on sensitive Windows files.
 - **Migration:** plain `init` (including `init --force`) no longer creates or changes `.github/workflows/repoguard.yml`. Run `init --with-ci` if you relied on the previous automatic CI setup.
 - The opt-in CI workflow pins checkout and Node setup Actions to immutable commits; it installs the exact `repoguard-rules@1.7.1` package outside the PR checkout instead of running the older v1.7.0 RepoGuard Action. It disables lifecycle scripts/persisted checkout credentials, only passes `GITHUB_TOKEN` to the review step, and requests `contents: read` and `pull-requests: write` (no `issues: write`). **Do not run the opt-in workflow before v1.7.1 is published to npm.**
 

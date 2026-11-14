@@ -63,6 +63,8 @@ npx repoguard-rules init
 
 If you **intentionally** want to regenerate RepoGuard files, use `npx repoguard-rules init --force`; add `--with-ci` if you also want to regenerate CI. Each selected existing regular file is copied to a unique adjacent `.repoguard-backup-<timestamp>` file *before* replacement. Symlink targets are never overwritten. Review and remove backups when appropriate; avoid committing them accidentally.
 
+**Windows ACL note:** NTFS permissions are not represented by POSIX mode bits. If files have custom access-control lists, the backup and `--force` replacement might not retain the same ACLs; review permissions manually or leave existing files untouched (the default). Strict `0600` mode preservation is validated on POSIX, not Windows.
+
 Or install globally:
 
 ```bash

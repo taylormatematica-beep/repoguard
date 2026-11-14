@@ -36,6 +36,10 @@ assert.strictEqual(goodHandlerViolations.length, 0, 'good_handler.rs should have
 const goodTestViolations = analyzeFixture('good_test.rs').filter(v => v.ruleId === 'RULE-RS-01');
 assert.strictEqual(goodTestViolations.length, 0, 'good_test.rs should NOT flag .unwrap() inside tests');
 
+const windowsTestPath = analyzeDiff('let value = Some(1).unwrap();', 'tests\\good_test.rs');
+assert.strictEqual(windowsTestPath.filter(v => v.ruleId === 'RULE-RS-01').length, 0,
+  'Windows test paths should not trigger production-only Rust rules');
+
 // Test 5: Git diff detection for Rust
 const rustDiff = `
 diff --git a/src/api/routes.rs b/src/api/routes.rs
