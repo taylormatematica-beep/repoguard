@@ -1,7 +1,7 @@
 {
   "name": "repoguard-rules",
   "version": "1.7.1",
-  "description": "The Architecture Guardian for AI-assisted codebases. Enforces clean layers, generates .cursorrules & CLAUDE.md for TypeScript, Python, Golang and Rust, and runs standalone MCP Server (Tools, Resources, Prompts).",
+  "description": "Architecture and security diagnostics for AI-assisted codebases, with CLI, pull request review, and MCP integrations.",
   "main": "bin/repoguard.js",
   "bin": {
     "repoguard-cli": "bin/repoguard.js",
