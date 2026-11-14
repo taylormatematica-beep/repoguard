@@ -32,8 +32,8 @@ jobs:
 
       - name: Verify package and lockfile version
         run: |
-          node -e "const p=require('./package.json'); if (p.name !== 'repoguard-rules' || p.version !== '1.7.0') process.exit(1)"
-          node -e "if (require('./package-lock.json').version !== '1.7.0') process.exit(1)"
+          node -e "const p=require('./package.json'); if (p.name !== 'repoguard-rules' || p.version !== '1.7.1') process.exit(1)"
+          node -e "if (require('./package-lock.json').version !== '1.7.1') process.exit(1)"
 
       - name: Install dependencies without lifecycle scripts
         run: npm ci --ignore-scripts --no-audit --no-fund
@@ -44,5 +44,5 @@ jobs:
       - name: Inspect publish tarball
         run: npm pack --dry-run
 
-      - name: Publish repoguard-rules@1.7.0 via npm trusted publisher
+      - name: Publish repoguard-rules@1.7.1 via npm trusted publisher
         run: npm publish --access public

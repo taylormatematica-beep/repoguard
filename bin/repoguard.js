@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * RepoGuard CLI v1.7.0 — The Architecture Guardian for AI-Assisted Codebases
+ * RepoGuard CLI v1.7.1 — The Architecture Guardian for AI-Assisted Codebases
  * Zero-dependency standalone CLI tool
  * Multi-Language Support: TypeScript/JavaScript, Python, Golang, Rust, Secrets 2.0
  */
@@ -19,6 +19,7 @@ const {
   ARCHITECTURAL_RULES
 } = require('./analyzer');
 const { runGitHubActionPRReview, generatePRReviewMarkdown } = require('./commenter');
+const { applyGeneratedFiles } = require('./safe-init');
 
 // ANSI Colors for Terminal Output
 const colors = {
@@ -42,7 +43,7 @@ ${colors.cyan}${colors.bright}  ____                     ____                   
  |  _ <  __/ |_) | (_) | | |_| | |_| | (_| | | | (_| |
  |_| \\_\\___| .__/ \\___/   \\____|\\__,_|\\__,_|_|  \\__,_|
            |_|                                        ${colors.reset}
-  ${colors.dim}The Architecture Guardian for AI-assisted code • v1.7.0${colors.reset}
+  ${colors.dim}The Architecture Guardian for AI-assisted code • v1.7.1${colors.reset}
 `);
 }
 
@@ -266,7 +267,7 @@ ${stack.language === 'TypeScript' ? '- NEVER use "any" or "as any". Define expli
 function generateClaudeMd(stack) {
   if (stack.language === 'Rust') {
     return `# CLAUDE.md — Rust Architecture & Context Guide
-> Enforced by RepoGuard v1.7.0. Read this before proposing any changes.
+> Enforced by RepoGuard v1.7.1. Read this before proposing any changes.
 
 ## Project Overview
 - Framework: ${stack.framework}
@@ -282,7 +283,7 @@ function generateClaudeMd(stack) {
   }
 
   return `# CLAUDE.md — Architecture & Context Guide
-> Enforced by RepoGuard v1.7.0. Read this before proposing any changes.
+> Enforced by RepoGuard v1.7.1. Read this before proposing any changes.
 
 ## Project Overview
 - **Framework:** ${stack.framework}
@@ -350,9 +351,8 @@ on:
     types: [opened, synchronize, reopened]
 
 permissions:
-  pull-requests: write
   contents: read
-  issues: write
+  pull-requests: write
 
 jobs:
   audit:
@@ -360,12 +360,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Run RepoGuard Architecture Review
-        uses: taylormatematica-beep/repoguard@main
+        uses: taylormatematica-beep/repoguard@ad7cdf4aebc0184638efece8080ad016624b5487 # v1.7.0
         with:
           github_token: \${{ secrets.GITHUB_TOKEN }}
           strict_mode: true
@@ -403,61 +404,78 @@ if (!isJsonFormat && !isSarifFormat) {
 const targetDir = process.cwd();
 
 if (command === 'init') {
+  const supportedOptions = new Set(['--force', '--dry-run', '--with-ci', '--help']);
+  const unknownOptions = args.slice(1).filter(option => !supportedOptions.has(option));
+  if (unknownOptions.length > 0) {
+    console.error(`Unknown init option(s): ${unknownOptions.join(', ')}. Use --help for available options.`);
+    process.exitCode = 2;
+    return;
+  }
+  if (args.includes('--help')) {
+    console.log(`Usage: npx repoguard-rules init [--dry-run] [--force] [--with-ci]
+  Default: create missing AI context files; preserve existing files and README.md; leave CI untouched.
+  --dry-run: preview actions without changing the project.
+  --force: back up and replace selected existing generated files (never follows symlinks).
+  --with-ci: explicitly include the RepoGuard GitHub Actions workflow.`);
+    return;
+  }
+
+  const dryRun = args.includes('--dry-run');
+  const force = args.includes('--force');
+  const withCi = args.includes('--with-ci');
   console.log(`${colors.cyan}🔍 Scanning repository architecture...${colors.reset}`);
-  
+
   const stack = detectProjectStack(targetDir);
   console.log(`  ${colors.green}✓${colors.reset} Framework: ${colors.bright}${stack.framework}${colors.reset}`);
   console.log(`  ${colors.green}✓${colors.reset} Language:  ${colors.bright}${stack.language}${colors.reset}`);
-  console.log(`  ${colors.green}✓${colors.reset} ORM/Data:  ${colors.bright}${stack.orm}${colors.reset}`);
+  console.log(`  ${colors.green}✓${colors.reset} ORM/Data: ${colors.bright}${stack.orm}${colors.reset}`);
   console.log(`  ${colors.green}✓${colors.reset} Directory: ${colors.bright}${stack.srcDir}/${colors.reset}\n`);
 
-  // 1. .cursorrules
-  fs.writeFileSync(path.join(targetDir, '.cursorrules'), generateCursorRules(stack), 'utf8');
-  console.log(`${colors.green}✨ Generated:${colors.reset} .cursorrules (For Cursor AI)`);
-
-  // 2. CLAUDE.md
-  fs.writeFileSync(path.join(targetDir, 'CLAUDE.md'), generateClaudeMd(stack), 'utf8');
-  console.log(`${colors.green}✨ Generated:${colors.reset} CLAUDE.md (For Claude Code CLI)`);
-
-  // 3. .windsurfrules
-  fs.writeFileSync(path.join(targetDir, '.windsurfrules'), generateWindsurfRules(stack), 'utf8');
-  console.log(`${colors.green}✨ Generated:${colors.reset} .windsurfrules (For Windsurf Cascade)`);
-
-  // 4. .github/copilot-instructions.md
-  const githubDir = path.join(targetDir, '.github');
-  if (!fs.existsSync(githubDir)) fs.mkdirSync(githubDir, { recursive: true });
-  fs.writeFileSync(path.join(githubDir, 'copilot-instructions.md'), generateCopilotInstructions(stack), 'utf8');
-  console.log(`${colors.green}✨ Generated:${colors.reset} .github/copilot-instructions.md (For GitHub Copilot)`);
-
-  // 5. GitHub Action Workflow
-  const workflowsDir = path.join(githubDir, 'workflows');
-  if (!fs.existsSync(workflowsDir)) fs.mkdirSync(workflowsDir, { recursive: true });
-  fs.writeFileSync(path.join(workflowsDir, 'repoguard.yml'), generateGitHubAction(), 'utf8');
-  console.log(`${colors.green}✨ Generated:${colors.reset} .github/workflows/repoguard.yml (For CI PR checks)\n`);
-
-  // 6. Viral Loop: Inject / Display Official RepoGuard Badge
-  const badgeMd = `[![Architecture: Guarded by RepoGuard](https://img.shields.io/badge/Architecture-Guarded%20by%20RepoGuard-00f2fe?style=flat-square)](https://github.com/taylormatematica-beep/repoguard)`;
-  const targetReadme = path.join(targetDir, 'README.md');
-  if (fs.existsSync(targetReadme)) {
-    try {
-      let rText = fs.readFileSync(targetReadme, 'utf8');
-      if (!rText.includes('Guarded by RepoGuard')) {
-        if (rText.startsWith('# ')) {
-          const firstLineEnd = rText.indexOf('\n');
-          rText = rText.slice(0, firstLineEnd + 1) + '\n' + badgeMd + '\n' + rText.slice(firstLineEnd + 1);
-        } else {
-          rText = badgeMd + '\n\n' + rText;
-        }
-        fs.writeFileSync(targetReadme, rText, 'utf8');
-        console.log(`${colors.green}🛡️ Injected:${colors.reset} Architecture badge into your README.md!`);
-      }
-    } catch (_) {}
+  const generated = [
+    { relativePath: '.cursorrules', content: generateCursorRules(stack) },
+    { relativePath: 'CLAUDE.md', content: generateClaudeMd(stack) },
+    { relativePath: '.windsurfrules', content: generateWindsurfRules(stack) },
+    { relativePath: '.github/copilot-instructions.md', content: generateCopilotInstructions(stack) }
+  ];
+  if (withCi) {
+    generated.push({ relativePath: '.github/workflows/repoguard.yml', content: generateGitHubAction() });
   }
 
-  console.log(`${colors.bright}${colors.green}🎉 Setup Complete! Your codebase is now guarded across all major AI tools.${colors.reset}\n`);
+  let results;
+  try {
+    results = applyGeneratedFiles(targetDir, generated, { force, dryRun });
+  } catch (error) {
+    console.error(`${colors.red}Safe Init stopped: ${error.message}${colors.reset}`);
+    process.exitCode = 1;
+    return;
+  }
 
-  console.log(`${colors.bright}🛡️ Show off your clean architecture to contributors & users!${colors.reset}`);
-  console.log(`Add this badge to your README.md:`);
+  const labels = {
+    created: 'Created',
+    skipped: 'Preserved existing',
+    replaced: 'Replaced',
+    'would-create': 'Would create',
+    'would-skip': 'Would preserve existing',
+    'would-replace': 'Would back up and replace'
+  };
+  for (const result of results) {
+    const note = result.symlink ? ' (symlink left untouched)' : '';
+    console.log(`  ${labels[result.action]}: ${result.relativePath}${note}`);
+    if (result.backupPath) console.log(`  Backup saved: ${result.backupPath}`);
+  }
+
+  if (dryRun) {
+    console.log(`\n${colors.cyan}Dry run complete. No files or directories were changed.${colors.reset}\n`);
+  } else {
+    const count = action => results.filter(result => result.action === action).length;
+    console.log(`\n${colors.green}Safe Init complete: ${count('created')} created, ${count('skipped')} preserved, ${count('replaced')} replaced.${colors.reset}\n`);
+  }
+  if (!withCi) {
+    console.log(`${colors.dim}CI workflow untouched. Pass --with-ci to include it explicitly.${colors.reset}\n`);
+  }
+
+  const badgeMd = `[![Architecture: Guarded by RepoGuard](https://img.shields.io/badge/Architecture-Guarded%20by%20RepoGuard-00f2fe?style=flat-square)](https://github.com/taylormatematica-beep/repoguard)`;
+  console.log(`${colors.dim}Optional README badge (copy it yourself if you want to use it):${colors.reset}`);
   console.log(`${colors.cyan}${badgeMd}${colors.reset}\n`);
 
   console.log(`${colors.dim}─────────────────────────────────────────────────────────────────────────────${colors.reset}`);
@@ -572,7 +590,7 @@ if (command === 'init') {
     process.exit(1);
   }
 
-  const hookScript = `#!/bin/sh\n# RepoGuard Pre-Commit Architecture Hook\nnpx repoguard diff\n`;
+  const hookScript = `#!/bin/sh\n# RepoGuard Pre-Commit Architecture Hook\nnpx repoguard-rules diff\n`;
   const hookPath = path.join(hooksDir, 'pre-commit');
   fs.writeFileSync(hookPath, hookScript, { mode: 0o755 });
   console.log(`${colors.green}✅ Pre-commit hook installed in .git/hooks/pre-commit!${colors.reset}`);
@@ -638,15 +656,15 @@ if (command === 'init') {
 
 } else {
   console.log(`Usage:
-  ${colors.bright}npx repoguard init${colors.reset}                  Generate .cursorrules, CLAUDE.md & Windsurf rules (Go, Python, TypeScript, Rust)
-  ${colors.bright}npx repoguard audit${colors.reset}                 Full codebase scan with Architectural Health Score (A+ to F)
-  ${colors.bright}npx repoguard audit --format=sarif${colors.reset}  Export SARIF v2.1.0 report for GitHub Code Scanning
-  ${colors.bright}npx repoguard audit --format=json${colors.reset}   Export machine-readable JSON for custom CI/CD pipelines
-  ${colors.bright}npx repoguard fix${colors.reset}                   Inspect and generate actionable architectural fixes
-  ${colors.bright}npx repoguard mcp${colors.reset}                   Launch Model Context Protocol (MCP) server (Tools, Resources, Prompts)
-  ${colors.bright}npx repoguard diff${colors.reset}                  Audit uncommitted git changes in real-time
-  ${colors.bright}npx repoguard hook install${colors.reset}          Install pre-commit hook to block AI drift locally
-  ${colors.bright}npx repoguard review${colors.reset}                Simulate PR review audit for GitHub CI
-  ${colors.bright}npx repoguard rules${colors.reset}                 List all active architectural rules (16 rules)
+  ${colors.bright}npx repoguard-rules init [--dry-run] [--force] [--with-ci]${colors.reset}  Safely create AI context files; CI opt-in, preview or back up and replace
+  ${colors.bright}npx repoguard-rules audit${colors.reset}                 Full codebase scan with Architectural Health Score (A+ to F)
+  ${colors.bright}npx repoguard-rules audit --format=sarif${colors.reset}  Export SARIF v2.1.0 report for GitHub Code Scanning
+  ${colors.bright}npx repoguard-rules audit --format=json${colors.reset}   Export machine-readable JSON for custom CI/CD pipelines
+  ${colors.bright}npx repoguard-rules fix${colors.reset}                   Inspect and generate actionable architectural fixes
+  ${colors.bright}npx repoguard-rules mcp${colors.reset}                   Launch Model Context Protocol (MCP) server (Tools, Resources, Prompts)
+  ${colors.bright}npx repoguard-rules diff${colors.reset}                  Audit uncommitted git changes in real-time
+  ${colors.bright}npx repoguard-rules hook install${colors.reset}          Install pre-commit hook to block AI drift locally
+  ${colors.bright}npx repoguard-rules review${colors.reset}                Simulate PR review audit for GitHub CI
+  ${colors.bright}npx repoguard-rules rules${colors.reset}                 List all active architectural rules (16 rules)
 `);
 }

@@ -5,7 +5,7 @@ const { execSync } = require('child_process');
 const { scanDirectory, analyzeDiff, calculateHealthScore, ARCHITECTURAL_RULES } = require('./analyzer');
 
 /**
- * RepoGuard Model Context Protocol (MCP) Server v1.7.0
+ * RepoGuard Model Context Protocol (MCP) Server v1.7.1
  * Implements Tools, Resources, and Prompts for Claude Desktop, Cursor, and Glama runners.
  */
 function startMCPServer() {
@@ -39,7 +39,7 @@ function startMCPServer() {
           },
           serverInfo: {
             name: 'repoguard-mcp',
-            version: '1.7.0'
+            version: '1.7.1'
           }
         });
       } else if (method === 'notifications/initialized') {
@@ -92,7 +92,7 @@ function startMCPServer() {
         if (name === 'repoguard_get_rules') {
           const rulesText = ARCHITECTURAL_RULES.map(r => `[${r.id}] (${r.severity}) [${r.category}] ${r.name}:\n  ${r.message}`).join('\n\n');
           sendResponse(id, {
-            content: [{ type: 'text', text: `RepoGuard v1.7.0 Architectural Rules (${ARCHITECTURAL_RULES.length} active):\n\n${rulesText}` }]
+            content: [{ type: 'text', text: `RepoGuard v1.7.1 Architectural Rules (${ARCHITECTURAL_RULES.length} active):\n\n${rulesText}` }]
           });
         } else if (name === 'repoguard_audit') {
           const dir = args.directory || process.cwd();

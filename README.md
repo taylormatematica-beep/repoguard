@@ -27,6 +27,8 @@
   <a href="https://taylormatematica-beep.github.io/repoguard/"><img src="https://img.shields.io/badge/playground-live%20demo-00f2fe?style=flat-square" alt="Live Playground"></a>
 </p>
 
+> **New in v1.7.1:** Safe Init preserves existing configuration, previews changes, makes CI generation opt-in, and never adds a README badge without your choice.
+>
 > **New in v1.7.0:** Rust panic safety, expanded secret detection, and MCP Tools + Resources + Prompts.
 
 > 🎮 **Try it in your browser:** [RepoGuard Interactive Playground](https://taylormatematica-beep.github.io/repoguard/#playground) — Audit code snippets in real-time with zero install.
@@ -42,17 +44,24 @@ AI coding assistants (**Cursor, GitHub Copilot, Claude Code, Windsurf**) write 3
 3. **Escape Type Safety & Error Handling:** Scatter `: any` in TypeScript, discard errors with `_ = err` in Go, or use panic-prone `.unwrap()` in Rust production code.
 4. **Leak Sensitive Secrets:** Hardcode AI/cloud provider tokens, embed database credentials in connection URLs, or expose secrets with the `NEXT_PUBLIC_` prefix.
 
-RepoGuard acts as an automated architecture supervisor: it generates strict, customized `.cursorrules`, `CLAUDE.md`, and `.windsurfrules` context files, verifies pre-commit diffs in ~12ms, runs an MCP server with Tools, Resources, and Prompts, and performs inline audits on every Pull Request.
+RepoGuard acts as an automated architecture supervisor: it generates strict, customized `.cursorrules`, `CLAUDE.md`, and `.windsurfrules` context files, verifies pre-commit diffs in ~12ms, runs an MCP server with Tools, Resources, and Prompts, and can audit Pull Requests when you enable its CI workflow.
 
 ---
 
 ## 🚀 Quickstart
 
-Run directly in any repository (zero installation required):
+Preview changes, then initialize a repository (zero installation required):
 
 ```bash
+npx repoguard-rules init --dry-run
 npx repoguard-rules init
 ```
+
+**Safe Init (v1.7.1):** `init` creates only four missing AI context files: `.cursorrules`, `CLAUDE.md`, `.windsurfrules`, and `.github/copilot-instructions.md`. Existing files and symlinks are preserved. It never edits your `README.md`; the optional badge is printed for you to copy manually. Repeating `init` does not change files already created.
+
+**CI is opt-in.** By default, `init` does not create, inspect, or replace `.github/workflows/repoguard.yml` (even with `--force`). To include that workflow, first preview it with `npx repoguard-rules init --with-ci --dry-run`, then run `npx repoguard-rules init --with-ci`. Review the generated workflow before committing it: it pins `actions/checkout` and the RepoGuard Action (to the known v1.7.0 commit) and grants `contents: read` and `pull-requests: write` for PR comments. On forked PRs, GitHub may restrict the token to read-only, so comments might not be posted.
+
+If you **intentionally** want to regenerate RepoGuard files, use `npx repoguard-rules init --force`; add `--with-ci` if you also want to regenerate CI. Each selected existing regular file is copied to a unique adjacent `.repoguard-backup-<timestamp>` file *before* replacement. Symlink targets are never overwritten. Review and remove backups when appropriate; avoid committing them accidentally.
 
 Or install globally:
 
@@ -68,7 +77,7 @@ repoguard init
 - 🤖 **Generates a comprehensive `CLAUDE.md`** (for Claude Code).
 - 🌊 **Generates `.windsurfrules`** (for Windsurf IDE).
 - 🛡️ **Generates `.github/copilot-instructions.md`** (for GitHub Copilot).
-- ⚙️ **Configures pre-commit guard hooks & CI workflow**.
+- ⚙️ **Leaves hooks and CI untouched by default**; install hooks with `repoguard hook install` or opt in to a CI workflow with `repoguard init --with-ci`.
 
 ---
 
@@ -83,7 +92,7 @@ RepoGuard ships with a built-in, zero-dependency **MCP Server** implementing the
   "mcpServers": {
     "repoguard": {
       "command": "npx",
-      "args": ["-y", "repoguard-rules@1.7.0", "mcp"]
+      "args": ["-y", "repoguard-rules@1.7.1", "mcp"]
     }
   }
 }
@@ -96,7 +105,7 @@ RepoGuard ships with a built-in, zero-dependency **MCP Server** implementing the
   "mcpServers": {
     "repoguard": {
       "command": "npx",
-      "args": ["-y", "repoguard-rules@1.7.0", "mcp"]
+      "args": ["-y", "repoguard-rules@1.7.1", "mcp"]
     }
   }
 }
@@ -121,7 +130,11 @@ RepoGuard ships with a built-in, zero-dependency **MCP Server** implementing the
 
 | Command | Description |
 | :--- | :--- |
-| `npx repoguard-rules init` | Scans codebase and generates tailored AI context files (TS, Py, Go, Rust). |
+| `npx repoguard-rules init` | Generates missing AI context files; leaves CI and README untouched. |
+| `npx repoguard-rules init --dry-run` | Previews AI context file operations; writes nothing. |
+| `npx repoguard-rules init --with-ci` | Explicitly includes the GitHub Actions workflow; preserves it if already present. |
+| `npx repoguard-rules init --with-ci --dry-run` | Previews AI and CI operations without writing anything. |
+| `npx repoguard-rules init --force` | Backs up and replaces selected AI context files; add `--with-ci` to include CI. |
 | `npx repoguard-rules audit` | Evaluates entire codebase and returns an **Architectural Health Score (A+ to F)**. |
 | `npx repoguard-rules audit --format=sarif` | Generates standard OASIS SARIF v2.1.0 for **GitHub Code Scanning** integration. |
 | `npx repoguard-rules audit --format=json` | Outputs machine-readable JSON for custom CI/CD pipelines. |

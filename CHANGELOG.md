@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.7.1] - Unreleased
+### 🛡️ Fixed
+- `init` preserves existing AI configuration and GitHub Action files instead of silently overwriting them; repeated runs are safe.
+- `init` no longer inserts a marketing badge into `README.md`. It prints an optional badge for manual use instead.
+- `init --force` backs up each selected existing regular file before replacing it, and refuses to follow symlinks or write through symlinked directories.
+
+### 🔍 Added
+- `init --dry-run` previews selected file operations without creating directories or modifying any files.
+- `init --with-ci` explicitly opts into generating the GitHub Actions workflow; combine with `--dry-run` to preview it or with `--force` to back up and replace an existing workflow.
+- Safe Init regression tests for new repositories, partial setups, repeat runs, backups, permissions, symlinks, CI opt-in, and invalid options.
+- CLI help examples now use the published `repoguard-rules` package name.
+
+### 🔄 Changed
+- **Migration:** plain `init` (including `init --force`) no longer creates or changes `.github/workflows/repoguard.yml`. Run `init --with-ci` if you relied on the previous automatic CI setup.
+- The opt-in CI workflow pins both external Actions to immutable commits, disables persisted checkout credentials, and only requests `contents: read` and `pull-requests: write` (no `issues: write`).
+
+---
+
 ## [1.7.0] - 2026-10-14
 ### 🦀 Added
 - **Rust Clean Architecture & Panic Safety Engine:**

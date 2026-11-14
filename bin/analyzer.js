@@ -1,7 +1,7 @@
 /**
  * RepoGuard Architecture & Diff Analyzer Engine
  * Comprehensive Multi-Language Rule Engine (TypeScript, Python, Go, Rust, Cloud Security)
- * Version 1.7.0
+ * Version 1.7.1
  */
 
 const fs = require('fs');
@@ -606,7 +606,7 @@ function formatSARIF(violations) {
         tool: {
           driver: {
             name: "RepoGuard",
-            version: "1.7.0",
+            version: "1.7.1",
             informationUri: "https://taylormatematica-beep.github.io/repoguard/",
             rules: ARCHITECTURAL_RULES.map(r => ({
               id: r.id,
@@ -645,7 +645,7 @@ function formatSARIF(violations) {
 function formatJSON(violations, healthScore, totalFiles) {
   return JSON.stringify({
     tool: "RepoGuard",
-    version: "1.7.0",
+    version: "1.7.1",
     totalFiles,
     healthScore: healthScore.score,
     grade: healthScore.grade,
